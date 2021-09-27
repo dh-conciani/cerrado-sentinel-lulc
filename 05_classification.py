@@ -17,7 +17,7 @@ YEARS = [
 
 ## definir regiões para classificar
 REGION_IDS = [ 
-    '26'
+    '16', '26', '1'
     #'1', '2', '3', '4', '5', '6', '7', 
     #'8', '9', '10', '11', '12', '13', '14',
     #'15', '16', '17', '18', '19', '20', '21',
@@ -209,7 +209,7 @@ for regionId in REGION_IDS:
         image=stacked_classification.toInt8(),
         description=name,
         assetId= ASSET_OUTPUT + name,
-        scale=30,
+        scale=10,
         pyramidingPolicy={'.default': 'mode'},
         maxPixels=1e13,
         region=region
