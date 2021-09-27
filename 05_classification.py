@@ -98,9 +98,6 @@ ASSET_REGIONS_RASTER = "users/dhconciani/base/cerrado_regioes_c6_rasterBands"
 ASSET_BIOMESVECTOR = 'projects/mapbiomas-workspace/AUXILIAR/biomas-2019'
 ### asset de biomas (raster)
 ASSET_BIOMESRASTER = 'projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster'
-## select only cerrado raster
-bioma250mil_CE = ee.Image(ASSET_BIOMESRASTER).mask(ee.Image(ASSET_BIOMESRASTER).eq(4))
-
 
 ## classificação
 def maskCollections(ic, reg):
@@ -155,7 +152,7 @@ for regionId in REGION_IDS:
             .mosaic()
         
         ## include latitude and longitude as auxiliary bands
-        ll = ee.Image.pixelLonLat().mask(region_ras)
+        ll = ee.Image.pixelLonLat().mask(mosaicTotal.select(1))
         long = ll.select('longitude').add(34.8).multiply(-1).multiply(1000).toInt16()
         lati = ll.select('latitude').add(5).multiply(-1).multiply(1000).toInt16()
         
@@ -174,7 +171,7 @@ for regionId in REGION_IDS:
         samplesTotal = samples.filter(
             ee.Filter.inList(
                 "reference",
-                [3, 4, 12, 15, 19, 21, 33, 25]
+                [3, 4, 11, 12, 15, 19, 21, 33, 25]
             )
         )
 
