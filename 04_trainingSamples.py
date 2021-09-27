@@ -105,7 +105,7 @@ for lista in regioes_lista:
         print('number of points: ', pts_reg.size().getInfo()) ## print number of points
         
         ## extract spectral signatures 
-        training = mosaicoTotal.sampleRegions(collection= pts_reg, scale= 20, geometries= True, tileScale= 2)
+        training = mosaicoTotal.sampleRegions(collection= pts_reg, scale= 10, geometries= True, tileScale= 2)
         
         ## remove NA or NULL from extracted data
         training = training.filter(ee.Filter.notNull(bandNames))
