@@ -36,8 +36,7 @@ regioes_lista = [
 
 ## define years to extract spectral signatures (temporal operator)
 anos = [   
-            #2016, 2017, 2018, 2019,
-            2020
+            2016, 2017, 2018, 2019, 2020
 ]
 
 ## surface reflectance bandnames
