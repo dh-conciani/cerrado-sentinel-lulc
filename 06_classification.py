@@ -12,18 +12,17 @@ RF_TREES = 100
 
 ## definir anos para classificar
 YEARS = [ 
-    '2020'
-]
+    '2016', '2017', '2018', '2019', '2020'
+    ]
 
 ## definir regiões para classificar
 REGION_IDS = [ 
-    '16', '26', '1'
-    #'1', '2', '3', '4', '5', '6', '7', 
-    #'8', '9', '10', '11', '12', '13', '14',
-    #'15', '16', '17', '18', '19', '20', '21',
-    #'22', '23', '24', '25', '26', '27', '28', 
-    #'29', '30', '31', '32', '33', '34', '35', 
-    #'36', '37', '38'
+    '1', '2', '3', '4', '5', '6', '7', 
+    '8', '9', '10', '11', '12', '13', '14',
+    '15', '16', '17', '18', '19', '20', '21',
+    '22', '23', '24', '25', '26', '27', '28', 
+    '29', '30', '31', '32', '33', '34', '35', 
+    '36', '37', '38'
 ]
 
 ## defininir nomes das bandas
@@ -124,18 +123,34 @@ for regionId in REGION_IDS:
 
     for year in YEARS:
         print("year:", year)
-        time_marker = int(year) - 2020
+        time_marker = int(year) - 2016
         #print ("years since first year:", time_marker)
-
-        ## remove smaples from water - avoid commission errors         
-        water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
-            .filter(ee.Filter.eq("reference", 33))\
-            .filter(ee.Filter.eq("slope", 0))\
-            .limit(175)
-
-        samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
-            .filter(ee.Filter.neq("reference", 33))\
-            .merge(water)
+        
+        ## if region is equal to 29, load unfiltered dataset
+        if (regionId == '29'):
+            print ('using UNfiltered samples')
+            ## remove smaples from water - avoid commission errors         
+            water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
+                .filter(ee.Filter.eq("reference", 33))\
+                .filter(ee.Filter.eq("slope", 0))\
+                .limit(175)
+            
+            samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
+                .filter(ee.Filter.neq("reference", 33))\
+                .merge(water)
+            
+        ## else, use filtered data        
+        else:
+            print ('using filteted samples')
+            water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION + '_filtered')\
+                .filter(ee.Filter.eq("reference", 33))\
+                .filter(ee.Filter.eq("slope", 0))\
+                .limit(175)
+            
+            samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION + '_filtered')\
+                .filter(ee.Filter.neq("reference", 33))\
+                .merge(water)         
+      
         
         ## import sentinel mosais
         mosaics = ee.ImageCollection(ASSET_MOSAICS)\
@@ -202,7 +217,7 @@ for regionId in REGION_IDS:
         print ('=======================================')  
         
     print ('exporting stacked classification')
-    name = BIOME_NAME + "_reg_" + str(regionId) + '_85a20' + '_v_' + OUTPUT_VERSION
+    name = BIOME_NAME + "_reg_" + str(regionId) + '_16a20' + '_v_' + OUTPUT_VERSION
     
     # export to asset
     task = ee.batch.Export.image.toAsset(
