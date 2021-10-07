@@ -1,5 +1,5 @@
 // Post-processing - Gapfill filter
-// Use raw classification as input (one image with 36 bands per region) 
+// Use raw classification as input (one image with 5 bands per region) 
 // For clarification, write to <dhemerson.costa@ipam.org.br> and <felipe.lenti@ipam.org.br>
 
 // define geometry (raw extent of cerrado)
@@ -161,7 +161,7 @@ print (image);
 Map.addLayer(image.select('classification_'+ ano), vis, 'image',false);
 
 
-Map.addLayer(imageFilledtnt0, vis, 'filtered');
+Map.addLayer(imageFilledtnt0.select('classification_' + ano), vis, 'filtered');
 
 // write metadata
 imageFilledtnt0 = imageFilledtnt0.set('vesion', '1');
