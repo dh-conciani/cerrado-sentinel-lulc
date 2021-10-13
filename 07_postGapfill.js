@@ -27,7 +27,7 @@ var VeightConnected = true;
 // define prefix for the output filename
 var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
 var prefixo_out = 'CERRADO_sentinel_gapfill_v';
-var vesion_out = '1';     
+var version_out = '2';     
 
 // dewfine year to plot a inspect
 var ano = 2020;
@@ -164,20 +164,20 @@ Map.addLayer(image.select('classification_'+ ano), vis, 'image',false);
 Map.addLayer(imageFilledtnt0.select('classification_' + ano), vis, 'filtered');
 
 // write metadata
-imageFilledtnt0 = imageFilledtnt0.set('vesion', '1');
+imageFilledtnt0 = imageFilledtnt0.set('vesion', version_out);
 print(imageFilledtnt0);
 
-print(dirout+prefixo_out+vesion_out);
+print(dirout+prefixo_out+version_out);
 
 // export as GEE asset
 Export.image.toAsset({
     'image': imageFilledtnt0,
-    'description': prefixo_out+vesion_out,
-    'assetId': dirout+prefixo_out+vesion_out,
+    'description': prefixo_out+version_out,
+    'assetId': dirout+prefixo_out+version_out,
     'pyramidingPolicy': {
         '.default': 'mode'
     },
     'region': geometry,
-    'scale': 30,
+    'scale': 10,
     'maxPixels': 1e13
 });
