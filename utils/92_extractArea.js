@@ -8,15 +8,19 @@ var cerrado = biomas.updateMask(biomas.eq(4));
 // function to compute area in hectares
 var pixelArea = ee.Image.pixelArea().divide(10000);
 // define resoltion 
-var resolution = 30;
+var resolution = 10;
 
-// define input file
-var file_path = 'projects/mapbiomas-workspace/public/collection6/';
-var file_name = 'mapbiomas_collection60_integration_v1';
+// define input file (collection 6)
+//var file_path = 'projects/mapbiomas-workspace/public/collection6/';
+//var file_name = 'mapbiomas_collection60_integration_v1';
+
+// define input file (sentinel)
+var file_path = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
+var file_name = 'CERRADO_sentinel_gapfill_wetland_temporal_spatial_freq_v1';
 
 // define output file
 var dir_out = 'SENTINEL-AREA';
-var export_name = 'area_col6';
+var export_name = 'area_sentinel_gapfill_wetland_temporal_spatial_freq_v1';
 
 // define cerrado regions asset
 var regioesCollection = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
@@ -108,6 +112,8 @@ anos.forEach(function(process_year) {
     recipe = recipe.merge(pol_reg);
   });
 });
+
+print ('before', recipe);
 
 // empty .geo column
 recipe.map(function(feature){
