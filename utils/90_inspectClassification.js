@@ -1,3 +1,5 @@
+// import cerrado
+var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
 // inspect classification result
 var year = 2020;
@@ -5,6 +7,8 @@ var year = 2020;
 // define inputs
 var mosaic = 'projects/nexgenmap/MapBiomas2/SENTINEL/mosaics';
 var classification = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
+var classification_version = '1';
+
 var col6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1');
 var landsat =  'projects/nexgenmap/MapBiomas2/LANDSAT/mosaics';
 
@@ -24,14 +28,29 @@ var mosaic = ee.ImageCollection(mosaic)
     .mosaic();
 
 // import classification
-var classification = ee.ImageCollection(classification)
-    .filterMetadata('year', 'equals', year)
-    .filterMetadata('version', 'equals', 1)
-    .mosaic();
-
+var gapfill = ee.Image(classification + '/' + 'CERRADO_sentinel_gapfill_v' + classification_version)
+              .select(['classification_' + year])
+              .updateMask(biomes.eq(4));
+              
+var wetland = ee.Image(classification + '/' + 'CERRADO_sentinel_gapfill_wetland_v' + classification_version)
+              .select(['classification_' + year])
+              .updateMask(gapfill);
+              
+var temporal = ee.Image(classification + '/' + 'CERRADO_sentinel_gapfill_wetland_temporal_v' + classification_version)
+              .select(['classification_' + year])
+              .updateMask(gapfill);
+              
+var spatial = ee.Image(classification + '/' + 'CERRADO_sentinel_gapfill_wetland_temporal_spatial_v' + classification_version)
+              .select(['classification_' + year])
+              .updateMask(gapfill);
+              
+var freq = ee.Image(classification + '/' + 'CERRADO_sentinel_gapfill_wetland_temporal_spatial_freq_v' + classification_version)
+              .select(['classification_' + year])
+              .updateMask(gapfill);
+              
 // import col6
 var col6 = col6.select(['classification_' + year])
-            .updateMask(classification);
+            .updateMask(gapfill);
             
 // import landsat mosaic
 var landsat = ee.ImageCollection(landsat)
@@ -45,7 +64,7 @@ Map.addLayer(mosaic, {
     'bands': ['swir1_median', 'nir_median', 'red_median'],
     'gain': [0.08, 0.07, 0.2],
     'gamma': 0.85
-}, 'Sentinel ' + year);
+}, 'Sentinel ' + year, true);
 
 // Plot Landsat
 Map.addLayer(landsat, {
@@ -53,10 +72,14 @@ Map.addLayer(landsat, {
         gain: [0.08, 0.07, 0.2],
         gamma: 0.85
     },
-    'Landsat ' + year);
+    'Landsat ' + year, false);
 
 // plot col6
-Map.addLayer(col6, vis, 'Collection 6.0 ' + year);
+Map.addLayer(col6, vis, 'Collection 6.0 ' + year, false);
 
 // plot classification 
-Map.addLayer(classification, vis, 'Collection Sentinel ' + year);
+Map.addLayer(gapfill, vis, 'gapfill ' + year);
+Map.addLayer(wetland, vis, 'gapfill+wetland ' + year);
+Map.addLayer(temporal, vis, 'gapfill+wetland_temporal ' + year);
+Map.addLayer(spatial, vis, 'gapfill+wetland+temporal+spatial ' + year);
+Map.addLayer(freq, vis, 'gapfill+wetland+temporal+spatial+freq ' + year);
