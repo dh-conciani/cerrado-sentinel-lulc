@@ -1,16 +1,21 @@
 // filter wetlands (11) by using an AOI created from HAND (15m)
+// convert wetland outside AOI to mosaic (21) 
+// convert wetland outside AOI and within protected areas to grassland (12)
 // dhemerson.costa@ipam.org.br
 
 // import sentinel classification
 var dir = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var file_in = 'CERRADO_sentinel_gapfill_v1';
-var file_out = 'CERRADO_sentinel_gapfill_wetland_v1';
+var file_in = 'CERRADO_sentinel_gapfill_v2';
+var file_out = 'CERRADO_sentinel_gapfill_wetland_v2';
 
 // import sentinel classification
 var classification = ee.Image(dir + '/' + file_in);
 
 // import AOI
 var aoi = ee.Image('projects/mapbiomas-workspace/AUXILIAR/CERRADO/c6-wetlands/input_masks/aoi_wetlands_c6');
+
+// import protected areas
+var ucs = ee.Image('users/dhconciani/base/raster_ucs_cerrado_2019_withoutAPAs_mask');
 
 // define years to be assessed
 var list_years = ['2016', '2017', '2018', '2019', '2020'];
@@ -38,7 +43,15 @@ list_years.forEach(function(year_i) {
                                            
   // blend with original data
      filtered_i = classification_i.blend(filtered_i);
-  
+     
+  // if wetland is outside AOI (HAND > 15m) and within protected area, convert to grassland
+  var filtered_uc = classification_naoi.updateMask(ucs.eq(1));
+      filtered_uc = filtered_uc.remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
+                                      [3, 4, 12, 12, 15, 19, 21, 25, 33]);
+                                      
+  // blend
+      filtered_i = filtered_i.blend(filtered_uc);
+                                      
   // add bands into recipe
   recipe = recipe.addBands(filtered_i);
   });
@@ -58,6 +71,6 @@ Export.image.toAsset({
         '.default': 'mode'
     },
     'region': recipe.geometry(),
-    'scale': 30,
+    'scale': 10,
     'maxPixels': 1e13
 });
