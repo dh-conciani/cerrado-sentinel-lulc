@@ -13,9 +13,9 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
 
 var bioma = "CERRADO";
 var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
-var file_in = 'CERRADO_sentinel_gapfill_wetland_temporal_v1';
+var file_in = 'CERRADO_sentinel_gapfill_wetland_temporal_v2';
 var file_out = 'CERRADO_sentinel_gapfill_wetland_temporal_spatial_v';
-var version_out = 1;
+var version_out = 2;
 
 // read image
 var class4GAP = ee.Image(dirout + file_in);
@@ -86,6 +86,6 @@ Export.image.toAsset({
         '.default': 'mode'
     },
     'region': geometry,
-    'scale': 30,
+    'scale': 10,
     'maxPixels': 1e13
 });
