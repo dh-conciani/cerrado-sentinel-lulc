@@ -77,7 +77,7 @@ original = original.addBands(image_gapfill.select('classification_2020')).aside(
 // define recipe
 var filtered = original;
 
-// apply functions
+// function to modify the first year by using the next two 
 var mask3first = function(valor, imagem){
   var mask = imagem.select('classification_2016').neq (valor)
         .and(imagem.select('classification_2017').eq(valor))
@@ -91,7 +91,7 @@ var mask3first = function(valor, imagem){
   return img_out;
 };
 
-// filter
+// classes that can change in the first year 
 filtered = mask3first(12, filtered);
 filtered = mask3first(11, filtered);
 filtered = mask3first(4, filtered);
@@ -99,6 +99,7 @@ filtered = mask3first(3, filtered);
 filtered = mask3first(15, filtered);
 filtered = mask3first(21, filtered);
 
+// function to modify the last year by usng the previous two years 
 var mask3last = function(valor, imagem){
   var mask = imagem.select('classification_2018').eq (valor)
         .and(imagem.select('classification_2019').eq(valor))
@@ -112,12 +113,12 @@ var mask3last = function(valor, imagem){
   return img_out;
 }
 
-// filter
-filtered = mask3last(21, filtered)
-filtered = mask3last(19, filtered)
-filtered = mask3last(15, filtered)
+// classes that can change in the last year (only anthropic)
+filtered = mask3last(21, filtered);
+filtered = mask3last(19, filtered);
+filtered = mask3last(15, filtered);
 
-print(filtered)
+print(filtered);
 
 // define rules
 filtered = window3valores(filtered, [19, 19, 11, 11])     // "deforestation" of wetland to mosaic rather than grassland
