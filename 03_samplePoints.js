@@ -3,7 +3,7 @@
 
 // define string to use as metadata
 var bioma = "CERRADO";     // ibge's biome
-var versao = '1';  // label string
+var versao = '11';  // label string
 
 // define sample size
 var sampleSize = 7000;     // by region
@@ -44,11 +44,6 @@ var getTrainingSamples = function (feature) {
   var nao_veg = ee.Number(feature.get('nao_veg'));
   var agua = ee.Number(feature.get('agua'));
   
-    // here we made an adjust to add +60% for the relative samples for the grassland class into each region 
-      //campo = campo.multiply(3);
-  // and 30% of forest
-      //floresta = floresta.multiply(1.5);
-
   // compute the total area 
   var total = floresta.add(savana).add(umida).add(campo)
               .add(pasto).add(agro).add(mosaico).add(nao_veg).add(agua);
@@ -64,12 +59,18 @@ var getTrainingSamples = function (feature) {
   var sampleNVeSize = ee.Number(nao_veg).divide(total).multiply(sampleSize).round().int16().max(nSamplesMin);
   var sampleAguSize = ee.Number(agua).divide(total).multiply(sampleSize).round().int16().max(nSamplesMin);
   
+  // balance samples
+  var factor = ee.Number(1); // factor is the integral number, in which we add or subtract proportions
+  sampleFloSize = sampleFloSize.multiply(factor.add(0.4)).int(); // add 30% for forest
+  sampleCamSize = sampleCamSize.multiply(factor.add(0.5)).int(); // add 50% for grassland
+  sampleWetSize = sampleWetSize.multiply(factor.subtract(0.3)).int(); // subtract 30% of wetlands
+  
   // clip stable pixels only to feature  
   var clippedGrid = ee.Feature(feature).geometry();
   var referenceMap =  dirsamples.clip(clippedGrid);
                       
   // generate points
-  var training = referenceMap.stratifiedSample({scale:30, classBand: 'reference', numPoints: 0, region: feature.geometry(), seed: 1, geometries: true,
+  var training = referenceMap.stratifiedSample({scale:30, classBand: 'reference', numPoints: 0, region: feature.geometry(), seed: 4589, geometries: true,
            classValues: [3, 4, 11, 12, 15, 19, 21, 25, 33], 
            classPoints: [sampleFloSize, sampleSavSize, sampleWetSize, sampleCamSize,
                          samplePasSize, sampleAgrSize, sampleMosSize, sampleNVeSize, sampleAguSize]
@@ -98,4 +99,5 @@ print(mySamples.limit(1));
 // export as GEE asset
 Export.table.toAsset(mySamples,
   'samples_col6_' + bioma + '_v' + versao,
+  dirout + '/samples_col6_' + bioma + '_v' + versao);
   dirout + '/samples_col6_' + bioma + '_v' + versao);
