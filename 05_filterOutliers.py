@@ -18,7 +18,7 @@ files_in = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/training-sentinel
 bandnames = ['ndvi_median']; 
 
 ## define the version of input samples
-version = '1'
+version = '11'
 
 ## define regions to be filtered
 regions = [ 
@@ -114,6 +114,6 @@ stat_df = {'region': obj_region,
 stat_df = pd.DataFrame(data= stat_df)
         
 ## export statistics as csv
-stat_df.to_csv(path_or_buf='data.csv')     
+stat_df.to_csv(path_or_buf='data.csv')    
 print ('statistics exported: root ./')
 print ('done :)')
