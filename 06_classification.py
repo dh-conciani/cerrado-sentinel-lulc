@@ -4,8 +4,8 @@ ee.Initialize()
 
 ## definir strings para label 
 BIOME_NAME = "CERRADO"
-SAMPLES_VERSION = '1'
-OUTPUT_VERSION = '1'
+SAMPLES_VERSION = '11'
+OUTPUT_VERSION = '11'
 
 ## definir numero de árvores para o randomForest
 RF_TREES = 100
