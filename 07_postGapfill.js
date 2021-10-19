@@ -18,7 +18,7 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
 // define strings to be used as metadata
 // input version
 var dircol6 = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var version = 1;    
+var version = 11;    
 var bioma = "CERRADO";
 
 // queens case
@@ -27,7 +27,7 @@ var VeightConnected = true;
 // define prefix for the output filename
 var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
 var prefixo_out = 'CERRADO_sentinel_gapfill_v';
-var version_out = '2';     
+var version_out = '11';     
 
 // dewfine year to plot a inspect
 var ano = 2020;
