@@ -3,12 +3,12 @@
 
 // define input 
 var bioma = "CERRADO";
-var file_in = bioma + '_sentinel_gapfill_wetland_v2';
+var file_in = bioma + '_sentinel_gapfill_wetland_v11';
 
 // define output
 var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
 var file_out = bioma + '_sentinel_gapfill_wetland_temporal_v';
-var version_out = 2;
+var version_out = 11;
 
 // import mapbiomas color ramp
 var palettes = require('users/mapbiomas/modules:Palettes.js');
