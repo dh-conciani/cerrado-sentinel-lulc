@@ -5,8 +5,8 @@
 
 // import sentinel classification
 var dir = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var file_in = 'CERRADO_sentinel_gapfill_v2';
-var file_out = 'CERRADO_sentinel_gapfill_wetland_v2';
+var file_in = 'CERRADO_sentinel_gapfill_v11';
+var file_out = 'CERRADO_sentinel_gapfill_wetland_v11';
 
 // import sentinel classification
 var classification = ee.Image(dir + '/' + file_in);
