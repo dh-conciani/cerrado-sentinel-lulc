@@ -2,10 +2,10 @@
 
 // define settings
 var bioma = "CERRADO";
-var file_in = bioma + '_sentinel_gapfill_wetland_temporal_spatial_v2';
+var file_in = bioma + '_sentinel_gapfill_wetland_temporal_spatial_v11';
 var file_out = bioma + '_sentinel_gapfill_wetland_temporal_spatial_freq_v';
 var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
-var version_out = 2;
+var version_out = 11;
 
 // import classification
 var class4 = ee.Image(dirout + file_in);
