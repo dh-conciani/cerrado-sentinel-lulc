@@ -16,11 +16,11 @@ var resolution = 10;
 
 // define input file (sentinel)
 var file_path = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
-var file_name = 'CERRADO_sentinel_gapfill_wetland_v2';
+var file_name = 'CERRADO_sentinel_pseudo_v2';
 
 // define output file
 var dir_out = 'SENTINEL-AREA';
-var export_name = 'CERRADO_sentinel_gapfill_wetland_v2';
+var export_name = file_name;
 
 // define cerrado regions asset
 var regioesCollection = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
