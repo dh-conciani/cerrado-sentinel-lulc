@@ -7,10 +7,12 @@ var year = 2020;
 // define inputs
 var mosaic = 'projects/nexgenmap/MapBiomas2/SENTINEL/mosaics';
 var classification = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var classification_version = '1';
+var classification_version = '2';
 
 var col6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1');
 var landsat =  'projects/nexgenmap/MapBiomas2/LANDSAT/mosaics';
+var sentinel_grid = ee.FeatureCollection('users/joaovsiqueira1/sentinel-2-acquisition-plans');
+
 
 // import the color ramp module from mapbiomas 
 var palettes = require('users/mapbiomas/modules:Palettes.js');
@@ -78,8 +80,9 @@ Map.addLayer(landsat, {
 Map.addLayer(col6, vis, 'Collection 6.0 ' + year, false);
 
 // plot classification 
-Map.addLayer(gapfill, vis, 'gapfill ' + year);
-Map.addLayer(wetland, vis, 'gapfill+wetland ' + year);
-Map.addLayer(temporal, vis, 'gapfill+wetland_temporal ' + year);
-Map.addLayer(spatial, vis, 'gapfill+wetland+temporal+spatial ' + year);
+Map.addLayer(gapfill, vis, 'gapfill ' + year, false);
+Map.addLayer(wetland, vis, 'gapfill+wetland ' + year, false);
+Map.addLayer(temporal, vis, 'gapfill+wetland_temporal ' + year, false);
+Map.addLayer(spatial, vis, 'gapfill+wetland+temporal+spatial ' + year, false);
 Map.addLayer(freq, vis, 'gapfill+wetland+temporal+spatial+freq ' + year);
+Map.addLayer(sentinel_grid, {}, 'grid sentinel');
