@@ -1,4 +1,4 @@
-// pseudo-integrate preliminar Cerrado collection 6 with cross-cuting themes from colleciton 5
+// pseudo-integrate preliminar Cerrado sentinel classification with collection 6.0 cross-cutting themes
 // dhemerson.conciani@ipam.org.br
 
 // load mapbiomas assets
