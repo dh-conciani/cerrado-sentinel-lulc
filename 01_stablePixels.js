@@ -129,9 +129,7 @@ var SEMA_bin = SEMA_SP.remap([3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26
 var SEMA_TO = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR');
     SEMA_TO = SEMA_TO.remap([11, 50, 128],
                             [11, 11, 0]);
-Map.addLayer(SEMA_TO, vis, 'sema')
-                  
-
+Map.addLayer(SEMA_TO, vis, 'sema');
 
 // remap collection 6 using legend that cerrado maps 
 var colList = ee.List([]);
