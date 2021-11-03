@@ -137,7 +137,7 @@ Map.addLayer(SEMA_TO, vis, 'sema')
 var colList = ee.List([]);
 var col6remap = colecao6.select('classification_1985').remap(
                   [3, 4, 5, 9,  11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33, 46, 47, 48],
-                  [3, 4, 3, 21, 11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]);
+                  [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]);
 // convert to 8 bits
 colList = colList.add(col6remap.int8());
 
@@ -154,8 +154,8 @@ for (var i_ano=0;i_ano<anos.length; i_ano++){
   var ano = anos[i_ano];
 
   var col6flor = colecao6.select('classification_' + ano).remap(
-                 [3, 4, 5,  9, 11, 12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
-                 [3, 4, 3, 21, 11, 12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33]);
+                 [3, 4, 5, 9, 11, 12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
+                 [3, 4, 3, 9, 11, 12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33]);
   colList = colList.add(col6flor.int8());
 }
 
@@ -196,7 +196,7 @@ var getFrenquencyMask = function(collection, classId) {
 var lista_image = ee.List([]);
 
 var classFrequency = { "3": 36,  "4": 36, "11": 36, "12": 36,
-                      "15": 36, "19": 36, "21": 36, "25": 36, 
+                      "15": 36, "19": 36, "9": 36, "25": 36, 
                       "33": 36
                       };
   
