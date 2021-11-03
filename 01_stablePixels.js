@@ -136,8 +136,8 @@ Map.addLayer(SEMA_TO, vis, 'sema')
 // remap collection 6 using legend that cerrado maps 
 var colList = ee.List([]);
 var col6remap = colecao6.select('classification_1985').remap(
-                  [3,4,5,  9, 11, 12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33,46,47,48],
-                  [3,4,3, 21, 11, 12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33,19,19,19]);
+                  [3, 4, 5, 9,  11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33, 46, 47, 48],
+                  [3, 4, 3, 21, 11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]);
 // convert to 8 bits
 colList = colList.add(col6remap.int8());
 
@@ -247,6 +247,17 @@ var grassland_sp = SEMA_SP.updateMask(referenceMapRef3.eq(12));
 // insert grassland from reference into são paulo state
 var referenceMapRef4 = referenceMapRef3.blend(SEMA_SP.updateMask(SEMA_SP.eq(12)));
 
+// rect forest stable pixels from são paulo
+var forest_sp = SEMA_SP.updateMask(referenceMapRef4.eq(3));
+    referenceMapRef4 = referenceMapRef4.blend(forest_sp);
+    
+// rect savanna pixels from são paulo
+var savanna_sp = SEMA_SP.updateMask(referenceMapRef4.eq(4));
+    referenceMapRef4 = referenceMapRef4.blend(savanna_sp);
+    
+// rect wetland
+var wetland_sp = SEMA_SP.updateMask(referenceMapRef4.eq(11));
+    referenceMapRef4 = referenceMapRef4.blend(wetland_sp);
 
 // plot correctred stable samples
 Map.addLayer(referenceMapRef4, vis, 'final');
