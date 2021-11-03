@@ -111,19 +111,27 @@ var colecao6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiom
 // probio
 var probioNV = ee.Image('users/felipelenti/probio_cerrado_ras');
     probioNV = probioNV.eq(1);
+    
 // prodes
 var prodesNV = ee.Image('users/felipelenti/prodes_cerrado_2000_2019');
     prodesNV = prodesNV.unmask(1).eq(1);
+    
 // instituto florestal do estado de sp
 var SEMA_SP = ee.Image('projects/mapbiomas-workspace/VALIDACAO/MATA_ATLANTICA/SP_IF_2020_2');
-SEMA_SP = SEMA_SP.remap(
-                  [3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
-                  [3, 4, 3,  9,11,12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33]);
-//Map.addLayer(SEMA_SP, vis, 'SEMA_SP', false);
-var SEMA_bin = SEMA_SP.remap(
-                  [3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
-                  [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+SEMA_SP = SEMA_SP.remap([3, 4, 5, 9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
+                        [3, 4, 3, 9,11,12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33]);
+Map.addLayer(SEMA_SP, vis, 'SEMA_SP', false);
+var SEMA_bin = SEMA_SP.remap([3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
+                             [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
                   var SEMA_bin = SEMA_bin.unmask(0).updateMask(assetStates.eq(35));
+                  
+// CAR do Estado do Tocantins
+var SEMA_TO = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR');
+    SEMA_TO = SEMA_TO.remap([11, 50, 128],
+                            [11, 11, 0]);
+Map.addLayer(SEMA_TO, vis, 'sema')
+                  
+
 
 // remap collection 6 using legend that cerrado maps 
 var colList = ee.List([]);
@@ -224,7 +232,7 @@ var referenceMapRef2 = referenceMapRef.where(SEMA_bin.eq(0).and(referenceMapRef.
 
  referenceMapRef2 = referenceMapRef2.updateMask(referenceMapRef2.neq(27)).rename("reference");
 
-// erase anthropogenic classes from mapbiomas that was classified as natural on refeernce data
+// erase anthropogenic classes from mapbiomas that was classified as natural on refeernce data (SP)
 var referenceMapRef3 = referenceMapRef2.where(SEMA_bin.eq(1).and(referenceMapRef2.eq(15)
                                                             .or(referenceMapRef2.eq(19)
                                                             .or(referenceMapRef2.eq(25)
@@ -232,8 +240,13 @@ var referenceMapRef3 = referenceMapRef2.where(SEMA_bin.eq(1).and(referenceMapRef
 
     referenceMapRef3 = referenceMapRef3.updateMask(referenceMapRef3.neq(27)).rename("reference");
 
-// insert grassland from reference into são paulo state samples
+// remove grassland stable pixels from sao paulo state (avoid overfitting) and use reference data to replace
+var grassland_sp = SEMA_SP.updateMask(referenceMapRef3.eq(12));
+    referenceMapRef3 = referenceMapRef3.blend(grassland_sp);
+
+// insert grassland from reference into são paulo state
 var referenceMapRef4 = referenceMapRef3.blend(SEMA_SP.updateMask(SEMA_SP.eq(12)));
+
 
 // plot correctred stable samples
 Map.addLayer(referenceMapRef4, vis, 'final');
