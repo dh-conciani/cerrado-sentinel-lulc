@@ -88,7 +88,7 @@ var CERRADO_simpl =
           [-57.94604647334397, -22.477333261520297],
           [-56.01245272334397, -22.68021819177981]]]);
 
-var version_out = '1'; // set a string to identify the output version
+var version_out = '2'; // set a string to identify the output version
 
 // import the color ramp module from mapbiomas 
 var palettes = require('users/mapbiomas/modules:Palettes.js');
@@ -120,7 +120,7 @@ var prodesNV = ee.Image('users/felipelenti/prodes_cerrado_2000_2019');
 var SEMA_SP = ee.Image('projects/mapbiomas-workspace/VALIDACAO/MATA_ATLANTICA/SP_IF_2020_2');
 SEMA_SP = SEMA_SP.remap([3, 4, 5, 9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
                         [3, 4, 3, 9,11,12,12,15,19,19,19,21,25,25,25,25,33,25,25,25,25,33]);
-Map.addLayer(SEMA_SP, vis, 'SEMA_SP', false);
+//Map.addLayer(SEMA_SP, vis, 'SEMA_SP', false);
 var SEMA_bin = SEMA_SP.remap([3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26,29,30,31,32,33],
                              [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
                   var SEMA_bin = SEMA_bin.unmask(0).updateMask(assetStates.eq(35));
@@ -129,7 +129,6 @@ var SEMA_bin = SEMA_SP.remap([3, 4, 5,  9,11,12,13,15,18,19,20,21,22,23,24,25,26
 var SEMA_TO = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR');
     SEMA_TO = SEMA_TO.remap([11, 50, 128],
                             [11, 11, 0]);
-Map.addLayer(SEMA_TO, vis, 'sema');
 
 // remap collection 6 using legend that cerrado maps 
 var colList = ee.List([]);
@@ -256,6 +255,16 @@ var savanna_sp = SEMA_SP.updateMask(referenceMapRef4.eq(4));
 // rect wetland
 var wetland_sp = SEMA_SP.updateMask(referenceMapRef4.eq(11));
     referenceMapRef4 = referenceMapRef4.blend(wetland_sp);
+
+// rect wetalnds from Tocantins by using SEMA-CAR reference map
+// avoid overfitting of grassland
+var grassland_to = SEMA_TO.updateMask(referenceMapRef4.eq(12));
+    grassland_to = grassland_to.updateMask(grassland_to.eq(11));
+    referenceMapRef4 = referenceMapRef4.blend(grassland_to);
+
+// match wetlands from stable and reference
+var wetland_to = SEMA_TO.updateMask(referenceMapRef4.eq(11));
+    referenceMapRef4 = referenceMapRef4.blend(wetland_to);
 
 // plot correctred stable samples
 Map.addLayer(referenceMapRef4, vis, 'final');
