@@ -1,5 +1,5 @@
-// generate stable samples fro collection 6 for the Cerrado biome
-// @ track improvements
+// generate stable pixels from collection 6 for the Cerrado biome
+// use invantario florestal do estado de sp + mapa tematico do car do estado do tocantins to rect samples
 // dhemerson.costa@ipam.org.br
 
 var CERRADO_simpl = 
