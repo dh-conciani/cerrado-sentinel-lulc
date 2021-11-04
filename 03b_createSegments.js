@@ -1,5 +1,6 @@
 // remove outliers from stable pixels by using segmentation 
 // dhemerson.costa@ipam.org.br
+// status: developing the extraction of segments that overlaps sample points (line 100)
 
 // cerrado extent
 var cerrado_extent = ee.Geometry.Polygon(
@@ -50,7 +51,7 @@ var segments = ee.Algorithms.Image.Segmentation.SNIC({
   });
 
 // plot segments
-Map.addLayer(segments.select(['clusters']).randomVisualizer(), {}, 'segments', false);
+Map.addLayer(segments.select(['clusters']).randomVisualizer(), {}, 'segments img', false);
 
 // plot sample points
 Map.addLayer(sample_points, {}, 'points', false);
@@ -74,7 +75,7 @@ print ('number of buffers produced: ', sample_buffer.size());
 var clipped_segments = segments.select(['clusters']).clipToCollection(sample_buffer);
 
 // plot clipped segments
-Map.addLayer(clipped_segments.randomVisualizer(), {}, 'clipped segments');
+Map.addLayer(clipped_segments.randomVisualizer(), {}, 'clipped segments img');
 
 // vectorize segments within each buffer 
 var vecSegments = function (obj) {
@@ -93,11 +94,20 @@ var vecSegments = function (obj) {
 
 // execute function to vectorize segments within buffers
 var vectorized_segments = sample_buffer.map(vecSegments);
-print ('number of vectors produced: ', vectorized_segments.flatten().size());
+//print ('number of vectors produced: ', vectorized_segments.flatten().size());
 
 // select only segments that overlaps the sample points
-//var selected_segments = vectorized_segments.intersection(sample_points);
-//print ('number of filtered segments: ', selected_segments.size());
+var select_segments = function (feature) {
+  return(feature.intersection(sample_points));
+  };
 
-// plot vectors 
-Map.addLayer(vectorized_segments.flatten(), {}, 'vectors');
+// apply function to select segments
+var selected_segments = vectorized_segments.map(select_segments);
+print ('number of selected segments: ', selected_segments.size());
+
+print (selected_segments.first())
+
+// plot selected segments
+//Map.addLayer(clipped_segments.clipToCollection(selected_segments.flatten()), {}, 'selected segments');
+
+
