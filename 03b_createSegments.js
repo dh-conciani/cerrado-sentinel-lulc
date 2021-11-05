@@ -1,6 +1,6 @@
-// remove outliers from stable pixels by using segmentation 
+// generate segments for a sentinel mosaic (2020) and select only them that overlaps sample points 
+// export as featureCollection GEE asset
 // dhemerson.costa@ipam.org.br
-// status: developing the extraction of segments that overlaps sample points (line 100)
 
 // cerrado extent
 var cerrado_extent = ee.Geometry.Polygon(
@@ -96,18 +96,14 @@ var vecSegments = function (obj) {
 var vectorized_segments = sample_buffer.map(vecSegments);
 //print ('number of vectors produced: ', vectorized_segments.flatten().size());
 
-// select only segments that overlaps the sample points
-var select_segments = function (feature) {
-  return(feature.intersection(sample_points));
-  };
-
-// apply function to select segments
-var selected_segments = vectorized_segments.map(select_segments);
+// select only the vectors of segments that overlap sample points 
+var selected_segments = vectorized_segments.flatten().filterBounds(sample_points.geometry());
 print ('number of selected segments: ', selected_segments.size());
 
-print (selected_segments.first())
-
 // plot selected segments
-//Map.addLayer(clipped_segments.clipToCollection(selected_segments.flatten()), {}, 'selected segments');
+Map.addLayer(selected_segments, {}, 'selected segments');
 
-
+// export segments that overlaps sample points
+Export.table.toAsset(selected_segments,
+  'selected_size_25',
+  'users/dh-conciani/segments/selected_size_25');
