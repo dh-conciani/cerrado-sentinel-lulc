@@ -67,10 +67,7 @@ Map.addLayer(sentinel, {
 }, 'Sentinel', true);
 
 // plot mapbiomas 
-Map.addLayer(mapbiomas, vis, 'mapbiomas [remmaped]');
-
-// plot stable pixels
-//Map.addLayer(stable_pixels, vis, 'stable pixels');
+Map.addLayer(mapbiomas, vis, 'mapbiomas [remmaped]', false);
 
 // define bandnames to be used in the segmentation 
 var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
@@ -113,7 +110,7 @@ Map.addLayer(segments.randomVisualizer(), {}, 'segments img', true);
     
 // define function to select only segments that overlaps sample points
 var getSimilarMask = function (segments, validateMap, samples) {
-    
+  // extract training sample class 
     var samplesSegments = segments.sampleRegions({
         collection: samples,
         properties: ['reference'],
@@ -121,7 +118,7 @@ var getSimilarMask = function (segments, validateMap, samples) {
         // geometries: true
     });
     
-
+  // extract the segment number 
     var segmentsValues = ee.List(
         samplesSegments.reduceColumns(
             ee.Reducer.toList().repeat(2),
