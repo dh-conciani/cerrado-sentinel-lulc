@@ -38,7 +38,7 @@ var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbio
 
 // sample points (un-filtered)
 var sample_points = ee.FeatureCollection('projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet/samples_col6_CERRADO_v21')
-                      .filterBounds(geometry);
+                      .filterBounds(cerrado_extent);
                       print ('number of sample points: ', sample_points.size());
                       
 // color ponts using mapbiomas color ramp
