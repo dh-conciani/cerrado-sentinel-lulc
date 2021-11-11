@@ -103,13 +103,13 @@ var getSegments = function (image, size) {
 var segments = getSegments(sentinel.select(segment_bands), 25);
     // reproject
     segments = segments.reproject('EPSG:4326', null, 10);
-    print ('raw segments', segments);
+    //print ('raw segments', segments);
     
 // plot segments
-Map.addLayer(segments.randomVisualizer(), {}, 'segments img', true);
+Map.addLayer(segments.randomVisualizer(), {}, 'segments img', false);
     
 // define function to select only segments that overlaps sample points
-var getSimilarMask = function (segments, validateMap, samples) {
+var selectSegments = function (segments, validateMap, samples) {
   // extract training sample class 
     var samplesSegments = segments.sampleRegions({
         collection: samples,
@@ -139,14 +139,24 @@ var getSimilarMask = function (segments, validateMap, samples) {
 };
 
 // apply function to select segments
-var similarMask = getSimilarMask(segments, mapbiomas, sample_points);
-    similarMask = similarMask.selfMask().rename(['class']);
+var selectedSegments = selectSegments(segments, mapbiomas, sample_points);
+    selectedSegments = selectedSegments.selfMask().rename(['class']);
 
-print ('filtered segments', similarMask);
-Map.addLayer(similarMask, vis, 'sample segments', true);
+//print ('filtered segments', selectedSegments);
+Map.addLayer(selectedSegments, vis, 'selected segments', true);
 
 // plot sample points
-Map.addLayer(samplesStyled, {}, 'samples');
+Map.addLayer(samplesStyled, {}, 'raw samples', true);
+
+// create percentil rule
+var percentil = segments.addBands(mapbiomas).reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments');
+
+// validate and retain only segments with satifies percentil rule
+var validated = percentil.select(0).multiply(percentil.select(0).eq(percentil.select(1)));
+var selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
+
+// plot validated
+Map.addLayer(selectedSegmentsValidated, vis, 'validated segments');
 
 
 
