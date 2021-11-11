@@ -2,6 +2,11 @@
 // dhemerson.costa@ipam.org.br
 // status: developing the extraction of segments that overlaps sample points (line 100)
 
+// define dir to export new samples
+var dirout = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet';
+// define output version
+var version = '31';
+
 // cerrado extent
 var cerrado_extent = ee.Geometry.Polygon(
         [[[-62.30982042125685, -0.9217170277068568],
@@ -28,7 +33,7 @@ var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbio
                   [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]
                   )
                   .rename('classification_2020')
-                  .clip(geometry);
+                  //.clip(geometry);
                   
 
 // sample points (un-filtered)
@@ -57,7 +62,7 @@ var sentinel = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaic
                 .filterMetadata('version', 'equals', '1')
                 .filterMetadata('year', 'equals', 2020)
                 .mosaic()
-                .clip(geometry);
+                //.clip(geometry);
 
 // plot sentinel mosaic
 Map.addLayer(sentinel, {
@@ -143,10 +148,10 @@ var selectedSegments = selectSegments(segments, mapbiomas, sample_points);
     selectedSegments = selectedSegments.selfMask().rename(['class']);
 
 //print ('filtered segments', selectedSegments);
-Map.addLayer(selectedSegments, vis, 'selected segments', true);
+Map.addLayer(selectedSegments, vis, 'selected segments', false);
 
 // plot sample points
-Map.addLayer(samplesStyled, {}, 'raw samples', true);
+Map.addLayer(samplesStyled, {}, 'raw samples', false);
 
 // create percentil rule
 var percentil = segments.addBands(mapbiomas).reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments');
@@ -156,8 +161,39 @@ var validated = percentil.select(0).multiply(percentil.select(0).eq(percentil.se
 var selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
 
 // plot validated
-Map.addLayer(selectedSegmentsValidated, vis, 'validated segments');
+Map.addLayer(selectedSegmentsValidated, vis, 'validated segments', false);
 
+// create a new set of samples based on the validated segments
+var newSamples = selectedSegmentsValidated
+    .sample({
+        region: sentinel.geometry(),
+        scale: 10,
+        factor: 0.01, // select 1% of the validated pixels as new samples
+        dropNulls: true,
+        geometries: true
+    });
+    print ('number of new sample points', newSamples.size());
+    
+// apply style to new points
+var newSamplesStyled = newSamples.map(
+    function (feature) {
+        return feature.set('style', {
+             'color': ee.List(require('users/mapbiomas/modules:Palettes.js').get('classification6'))
+                .get(feature.get('class')),
+            'width': 1,
+        });
+    }
+).style(
+    {
+        'styleProperty': 'style'
+    }
+);
 
+// plot new points
+Map.addLayer(newSamplesStyled, {}, 'new samples', true);
 
-
+// export new training points
+// export as GEE asset
+Export.table.toAsset(newSamples,
+  'samples_col6_' +'CERRADO' + '_v' + version,
+  dirout + '/samples_col6_' + 'CERRADO' + '_v' + version);
