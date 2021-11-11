@@ -33,7 +33,7 @@ var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbio
                   [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]
                   )
                   .rename('classification_2020')
-                  //.clip(geometry);
+                  .clip(cerrado_extent);
                   
 
 // sample points (un-filtered)
@@ -62,7 +62,7 @@ var sentinel = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaic
                 .filterMetadata('version', 'equals', '1')
                 .filterMetadata('year', 'equals', 2020)
                 .mosaic()
-                //.clip(geometry);
+                .clip(cerrado_extent);
 
 // plot sentinel mosaic
 Map.addLayer(sentinel, {
