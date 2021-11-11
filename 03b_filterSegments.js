@@ -1,6 +1,5 @@
-// remove outliers from stable pixels by using segmentation 
+// remove outliers from stable pixels by using segmentation, percentil reducer and new samples 
 // dhemerson.costa@ipam.org.br
-// status: developing the extraction of segments that overlaps sample points (line 100)
 
 // define dir to export new samples
 var dirout = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet';
