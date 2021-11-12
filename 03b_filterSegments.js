@@ -205,6 +205,7 @@ summary.getInfo().forEach(function(carta_i) {
   var selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
   
   // plot validated
+  print ('validated segments', selectedSegmentsValidated);
   //Map.addLayer(selectedSegmentsValidated, vis, 'validated segments', false);
   
   // create a new set of samples based on the validated segments
