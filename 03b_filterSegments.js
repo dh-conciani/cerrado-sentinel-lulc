@@ -102,7 +102,7 @@ summary.getInfo().forEach(function(carta_i) {
     
     // filterbounds of the points
     var sample_points_i = sample_points.filterBounds(cartas.filterMetadata('grid_name', 'equals', carta_i));
-        print ('number of points IC. ' + carta_i, sample_points_i.size());
+        //print ('number of points IC. ' + carta_i, sample_points_i.size());
         // apply mapbiomas style to points
         var samplesStyled = sample_points_i.map(
             function (feature) {
@@ -216,7 +216,9 @@ summary.getInfo().forEach(function(carta_i) {
           dropNulls: true,
           geometries: true
       });
-      print ('number of new sample points', newSamples.size());
+      
+      print (carta_i, 'raw: ', ee.Number(sample_points_i.size()),
+                      'new: ', ee.Number(newSamples.size()));
       
   // apply style to new points
   var newSamplesStyled = newSamples.map(
