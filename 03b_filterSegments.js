@@ -79,7 +79,8 @@ var cartas = ee.FeatureCollection("projects/mapbiomas-workspace/AUXILIAR/cartas"
               .filterBounds(cerrado);
 
 // create a list of values to iterate              
-var summary = cartas.aggregate_array('grid_name');
+var summary = cartas.aggregate_array('grid_name')
+                .remove('SG-21-X-B');
 
 // create an empty recipe
 var recipe = ee.FeatureCollection([]);
