@@ -88,15 +88,17 @@ var recipe = ee.FeatureCollection([]);
 summary.getInfo().forEach(function(carta_i) {
     // clip sentinel mosaic to carta [i]
     var sentinel_i = sentinel.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
+      /*
       Map.addLayer(sentinel_i, {
       'bands': ['swir1_median', 'nir_median', 'red_median'],
       'gain': [0.08, 0.07, 0.2],
       'gamma': 0.85
       }, 'Sentinel IC. ' + carta_i, true);
+      */
 
     // clip mapbiomas to region [i]
     var mapbiomas_i = mapbiomas.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
-    Map.addLayer(mapbiomas_i, vis, 'mapbiomas IC. ' + carta_i, false);
+    //Map.addLayer(mapbiomas_i, vis, 'mapbiomas IC. ' + carta_i, false);
     
     // filterbounds of the points
     var sample_points_i = sample_points.filterBounds(cartas.filterMetadata('grid_name', 'equals', carta_i));
@@ -117,7 +119,7 @@ summary.getInfo().forEach(function(carta_i) {
         );
         
     // plot sample points
-    Map.addLayer(samplesStyled, {}, 'raw samples IC.' + carta_i, false);
+    //Map.addLayer(samplesStyled, {}, 'raw samples IC.' + carta_i, false);
         
     // define bandnames to be used in the segmentation 
     var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
@@ -156,7 +158,7 @@ summary.getInfo().forEach(function(carta_i) {
       //print ('raw segments', segments);
       
   // plot segments
-  Map.addLayer(segments.randomVisualizer(), {}, 'segments IC. ' + carta_i, false);
+  //Map.addLayer(segments.randomVisualizer(), {}, 'segments IC. ' + carta_i, false);
       
   // define function to select only segments that overlaps sample points
   var selectSegments = function (segments, validateMap, samples) {
@@ -193,7 +195,7 @@ summary.getInfo().forEach(function(carta_i) {
       selectedSegments = selectedSegments.selfMask().rename(['class']);
   
   //print ('filtered segments', selectedSegments);
-  Map.addLayer(selectedSegments, vis, 'selected segments IC. ' + carta_i, false);
+  //Map.addLayer(selectedSegments, vis, 'selected segments IC. ' + carta_i, false);
   
   // create percentil rule
   var percentil = segments.addBands(mapbiomas_i).reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments');
@@ -203,7 +205,7 @@ summary.getInfo().forEach(function(carta_i) {
   var selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
   
   // plot validated
-  Map.addLayer(selectedSegmentsValidated, vis, 'validated segments', false);
+  //Map.addLayer(selectedSegmentsValidated, vis, 'validated segments', false);
   
   // create a new set of samples based on the validated segments
   var newSamples = selectedSegmentsValidated
@@ -232,7 +234,7 @@ summary.getInfo().forEach(function(carta_i) {
   );
   
   // plot new points
-  Map.addLayer(newSamplesStyled, {}, 'new samples', true);
+  //Map.addLayer(newSamplesStyled, {}, 'new samples', true);
   
   // merge into recipe
   recipe = recipe.merge(newSamples);
