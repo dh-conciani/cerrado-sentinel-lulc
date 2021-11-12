@@ -70,32 +70,37 @@ Map.addLayer(sentinel, {
 // plot mapbiomas 
 //Map.addLayer(mapbiomas, vis, 'mapbiomas [remmaped]', false);
 
-// import classification regions 
-var class_regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
+// import cerrado vector 
+var cerrado = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/biomas-2019')
+                .filterMetadata('Bioma', 'equals', 'Cerrado');
+                
+// import ibge cartas and filter to cerrado 
+var cartas = ee.FeatureCollection("projects/mapbiomas-workspace/AUXILIAR/cartas")
+              .filterBounds(cerrado);
 
-// define regions to be processed
-var regions = [16, 26];
+// create a list of values to iterate              
+var summary = cartas.aggregate_array('grid_name');
 
 // create an empty recipe
 var recipe = ee.FeatureCollection([]);
 
-// for each region 
-regions.forEach(function(region_i) {
-    // clip sentinel mosaic to region [i]
-    var sentinel_i = sentinel.clip(class_regions.filterMetadata('mapb', 'equals', region_i));
+// for each carta
+summary.getInfo().forEach(function(carta_i) {
+    // clip sentinel mosaic to carta [i]
+    var sentinel_i = sentinel.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
       Map.addLayer(sentinel_i, {
       'bands': ['swir1_median', 'nir_median', 'red_median'],
       'gain': [0.08, 0.07, 0.2],
       'gamma': 0.85
-      }, 'Sentinel reg. ' + region_i, true);
+      }, 'Sentinel IC. ' + carta_i, true);
 
     // clip mapbiomas to region [i]
-    var mapbiomas_i = mapbiomas.clip(class_regions.filterMetadata('mapb', 'equals', region_i));
-    Map.addLayer(mapbiomas_i, vis, 'mapbiomas reg. ' + region_i, false);
+    var mapbiomas_i = mapbiomas.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
+    Map.addLayer(mapbiomas_i, vis, 'mapbiomas IC. ' + carta_i, false);
     
     // filterbounds of the points
-    var sample_points_i = sample_points.filterBounds(class_regions.filterMetadata('mapb', 'equals', region_i));
-        print ('number of points reg. ' + region_i, sample_points_i.size());
+    var sample_points_i = sample_points.filterBounds(cartas.filterMetadata('grid_name', 'equals', carta_i));
+        print ('number of points IC. ' + carta_i, sample_points_i.size());
         // apply mapbiomas style to points
         var samplesStyled = sample_points_i.map(
             function (feature) {
@@ -112,7 +117,7 @@ regions.forEach(function(region_i) {
         );
         
     // plot sample points
-    Map.addLayer(samplesStyled, {}, 'raw samples reg.' + region_i, false);
+    Map.addLayer(samplesStyled, {}, 'raw samples IC.' + carta_i, false);
         
     // define bandnames to be used in the segmentation 
     var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
@@ -151,7 +156,7 @@ regions.forEach(function(region_i) {
       //print ('raw segments', segments);
       
   // plot segments
-  Map.addLayer(segments.randomVisualizer(), {}, 'segments reg. ' + region_i, false);
+  Map.addLayer(segments.randomVisualizer(), {}, 'segments IC. ' + carta_i, false);
       
   // define function to select only segments that overlaps sample points
   var selectSegments = function (segments, validateMap, samples) {
@@ -188,7 +193,7 @@ regions.forEach(function(region_i) {
       selectedSegments = selectedSegments.selfMask().rename(['class']);
   
   //print ('filtered segments', selectedSegments);
-  Map.addLayer(selectedSegments, vis, 'selected segments reg. ' + region_i, false);
+  Map.addLayer(selectedSegments, vis, 'selected segments IC. ' + carta_i, false);
   
   // create percentil rule
   var percentil = segments.addBands(mapbiomas_i).reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments');
