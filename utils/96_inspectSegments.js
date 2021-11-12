@@ -1,6 +1,5 @@
 // remove outliers from stable pixels by using segmentation 
 // dhemerson.costa@ipam.org.br
-// status: developing the extraction of segments that overlaps sample points (line 100)
 
 // define dir to export new samples
 var dirout = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet';
@@ -29,8 +28,8 @@ var vis = {
 var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1')
                   .select('classification_2020')
                   .remap(
-                  [3, 4, 5, 9,  11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33, 46, 47, 48],
-                  [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19]
+                  [3, 4, 5, 9,  11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33, 41, 46, 47, 48],
+                  [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19, 19]
                   )
                   .rename('classification_2020')
                   .clip(geometry);
