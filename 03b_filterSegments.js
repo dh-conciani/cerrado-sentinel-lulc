@@ -1,5 +1,5 @@
 // remove outliers from stable pixels by using segmentation, percentil reducer, validation and new samples
-// dhemerson.costa@ipam.org.br
+// dhemerson.costa@ipam.org.br; wallace.silva@ipam.org.br
 
 // define dir to export new samples
 var dirout = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet';
@@ -85,24 +85,33 @@ var summary = cartas.aggregate_array('grid_name')
 // create an empty recipe
 var recipe = ee.FeatureCollection([]);
 
+summary = summary
+  // .slice(50,52)
+  .getInfo();
+
+print(summary);
+print(cartas.first());
 // for each carta
-summary.getInfo().forEach(function(carta_i) {
+summary.forEach(function(carta_i) {
     // clip sentinel mosaic to carta [i]
-    var sentinel_i = sentinel.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
-      /*
-      Map.addLayer(sentinel_i, {
-      'bands': ['swir1_median', 'nir_median', 'red_median'],
-      'gain': [0.08, 0.07, 0.2],
-      'gamma': 0.85
-      }, 'Sentinel IC. ' + carta_i, true);
-      */
+    
+    var carta = cartas.filterMetadata('grid_name', 'equals', carta_i);
+    var carta_mask = ee.Image(0).mask(0).paint(carta);
+
+    var sentinel_i = sentinel.updateMask(carta_mask.eq(0));
+  
+      // Map.addLayer(sentinel_i, {
+      // 'bands': ['swir1_median', 'nir_median', 'red_median'],
+      // 'gain': [0.08, 0.07, 0.2],
+      // 'gamma': 0.85
+      // }, 'Sentinel IC. ' + carta_i, true);
 
     // clip mapbiomas to region [i]
-    var mapbiomas_i = mapbiomas.clip(cartas.filterMetadata('grid_name', 'equals', carta_i));
+    var mapbiomas_i = mapbiomas.updateMask(carta_mask.neq(0));
     //Map.addLayer(mapbiomas_i, vis, 'mapbiomas IC. ' + carta_i, false);
     
     // filterbounds of the points
-    var sample_points_i = sample_points.filterBounds(cartas.filterMetadata('grid_name', 'equals', carta_i));
+    var sample_points_i = sample_points.filterBounds(carta);
         //print ('number of points IC. ' + carta_i, sample_points_i.size());
         // apply mapbiomas style to points
         var samplesStyled = sample_points_i.map(
@@ -118,7 +127,9 @@ summary.getInfo().forEach(function(carta_i) {
                 'styleProperty': 'style'
             }
         );
-        
+    
+    // Map.addLayer(sample_points_i);
+    
     // plot sample points
     //Map.addLayer(samplesStyled, {}, 'raw samples IC.' + carta_i, false);
         
@@ -162,9 +173,9 @@ summary.getInfo().forEach(function(carta_i) {
   //Map.addLayer(segments.randomVisualizer(), {}, 'segments IC. ' + carta_i, false);
       
   // define function to select only segments that overlaps sample points
-  var selectSegments = function (segments, validateMap, samples) {
+  var selectSegments = function (segments_i, validateMap, samples) {
     // extract training sample class 
-      var samplesSegments = segments.sampleRegions({
+      var samplesSegments = segments_i.sampleRegions({
           collection: samples,
           properties: ['reference'],
           scale: 10,
@@ -182,7 +193,7 @@ summary.getInfo().forEach(function(carta_i) {
       //print(segmentsValues.get(1),
       //      segmentsValues.get(0));
   
-      var similiarMask = segments.remap(
+      var similiarMask = segments_i.remap(
           ee.List(segmentsValues.get(1)),
           ee.List(segmentsValues.get(0)),
           0
@@ -212,7 +223,7 @@ summary.getInfo().forEach(function(carta_i) {
   // create a new set of samples based on the validated segments
   var newSamples = selectedSegmentsValidated
       .sample({
-          region: cartas.filterMetadata('grid_name', 'equals', carta_i),
+          region: carta.geometry(),
           scale: 10,
           factor: 0.01, // select 1% of the validated pixels as new samples
           dropNulls: true,
@@ -226,7 +237,7 @@ summary.getInfo().forEach(function(carta_i) {
   var newSamplesStyled = newSamples.map(
       function (feature) {
           return feature.set('style', {
-               'color': ee.List(require('users/mapbiomas/modules:Palettes.js').get('classification6'))
+              'color': ee.List(require('users/mapbiomas/modules:Palettes.js').get('classification6'))
                   .get(feature.get('class')),
               'width': 1,
           });
@@ -243,6 +254,8 @@ summary.getInfo().forEach(function(carta_i) {
   // merge into recipe
   recipe = recipe.merge(newSamples);
 });
+
+print(recipe);
 
 // export new training points
 // export as GEE asset
