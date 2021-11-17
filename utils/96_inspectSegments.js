@@ -1,6 +1,11 @@
 // remove outliers from stable pixels by using segmentation 
 // dhemerson.costa@ipam.org.br
 
+var cartas = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/cartas');
+var geometry = cartas.filterMetadata('grid_name', 'equals', 'SF-23-Y-A');
+var carta_mask = ee.Image(0).mask(0).paint(geometry);
+    
+
 // define dir to export new samples
 var dirout = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-planet';
 // define output version
@@ -32,7 +37,7 @@ var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbio
                   [3, 4, 3, 9,  11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19, 19]
                   )
                   .rename('classification_2020')
-                  .clip(geometry);
+                  .updateMask(carta_mask.eq(0));
 
 
 // sample points (un-filtered)
@@ -61,7 +66,7 @@ var sentinel = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaic
                 .filterMetadata('version', 'equals', '1')
                 .filterMetadata('year', 'equals', 2020)
                 .mosaic()
-                .clip(geometry);
+                .updateMask(carta_mask.eq(0));
 
 // plot sentinel mosaic
 Map.addLayer(sentinel, {
@@ -157,7 +162,12 @@ var percentil = segments.addBands(mapbiomas).reduceConnectedComponents(ee.Reduce
 
 // validate and retain only segments with satifies percentil rule
 var validated = percentil.select(0).multiply(percentil.select(0).eq(percentil.select(1)));
+print (validated)
+Map.addLayer(percentil.select(1), vis, 'va')
+
 var selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
+
+
 
 // plot validated
 Map.addLayer(selectedSegmentsValidated, vis, 'validated segments', false);
