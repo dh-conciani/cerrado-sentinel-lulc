@@ -1,6 +1,6 @@
 ## filter outliers from stable samples by using segmentation, percentil reducer and sorting new samples
 ## for any issue or bug, write to dhemerson.costa@ipam.org.br and/or wallace.silva@ipam.org.br
-## mapbiomas sentinel beta collection - cerrado biome
+## mapbiomas sentinel beta collection 
 
 ## import api
 import ee
@@ -52,15 +52,9 @@ cartas = ee.FeatureCollection("projects/mapbiomas-workspace/AUXILIAR/cartas")\
 summary = cartas.aggregate_array('grid_name')\
     .remove('SG-21-X-B')\
     .getInfo();
-    #.slice(50,51)\
-
-## create empty recipies to store statistics
-obj_carta = []
-obj_in = []
-obj_out = []
-obj_ratio = []
-
-## for each carta[i] in summary
+    #.slice(4,200)\
+    
+# for each carta[i] in summary
 for carta_i in summary:
     ## start index
     print ('Processing: ' + carta_i)    
@@ -177,22 +171,8 @@ for carta_i in summary:
     
     ## apply function to generate new points
     new = getNewSamples(image= selectedSegmentsValidated, 
-                        extent= carta)
-    
-    ## compute the number of general output points 
-    out_number = new.size().getInfo()    
-    print ('Output points: ' + str(out_number))
-    
-    ## compute ratio gain
-    ratio_gain = out_number / in_number
-    print('Ratio: ', ratio_gain)    
-    
-    ## store general statistcs
-    obj_carta = obj_carta + [carta_i]
-    obj_in = obj_in + [in_number]
-    obj_out = obj_out + [out_number]
-    obj_ratio = obj_ratio + [ratio_gain]       
-    
+                        extent= carta)  
+      
     ## build exportation
     task = ee.batch.Export.table.toAsset(new,
                                          str(carta_i) + '_' + 'v' + str(version),\
@@ -201,18 +181,4 @@ for carta_i in summary:
     ## export
     task.start()
     print ('done! ======================= > next')
-    ## @ end of for @ ##
-    
-## build statistics
-stat_df = {'carta': obj_carta, 
-           'total_input': obj_in,
-           'total_output': obj_out,
-           'total_ratio': obj_ratio
-           }
-
-## convert statistics to data.frame
-stat_df = pd.DataFrame(data= stat_df)
-
-## export statistics
-stat_df.to_csv(path_or_buf='newSamples_stats.csv')
-print('100% done :)')
+    ## @ end of for @ ##      
