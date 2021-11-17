@@ -1,6 +1,6 @@
 ## filter outliers from stable samples by using segmentation, percentil reducer and sorting new samples
 ## for any issue or bug, write to dhemerson.costa@ipam.org.br and/or wallace.silva@ipam.org.br
-## mapbiomas sentinel beta collection 
+## mapbiomas sentinel beta collection - cerrado biome
 
 ## import api
 import ee
