@@ -1,6 +1,6 @@
 ## filter outliers from stable samples by using segmentation, percentil reducer and sorting new samples
 ## for any issue or bug, write to dhemerson.costa@ipam.org.br and/or wallace.silva@ipam.org.br
-## mapbiomas sentinel beta collection - cerrado biome
+## mapbiomas sentinel beta collection 
 
 ## import api
 import ee
@@ -52,8 +52,8 @@ cartas = ee.FeatureCollection("projects/mapbiomas-workspace/AUXILIAR/cartas")\
 summary = cartas.aggregate_array('grid_name')\
     .remove('SG-21-X-B')\
     .getInfo();
-    #.slice(4,200)\
-    
+#    .slice(0,1)\
+
 # for each carta[i] in summary
 for carta_i in summary:
     ## start index
@@ -67,10 +67,11 @@ for carta_i in summary:
     sentinel_i = sentinel.updateMask(carta_mask.eq(0));
     
     ## mask mapbiomas classification 
-    mapbiomas_i = mapbiomas.updateMask(carta_mask.neq(0));
+    mapbiomas_i = mapbiomas.updateMask(carta_mask.eq(0));
     
     ## filter bounds of the points 
     sample_points_i = sample_points.filterBounds(carta);
+   
     ## compute the number of points
     in_number = sample_points_i.size().getInfo()
     print ('Input points: ' + str(in_number))
@@ -123,6 +124,7 @@ for carta_i in summary:
                 ['reference', 'segments']).get('list')
             );
         
+        
         ## label segments with reference class
         similiarMask = segments_i.remap(
             ee.List(segmentsValues.get(1)),
@@ -138,21 +140,19 @@ for carta_i in summary:
                                       properties= ['reference'],
                                       scale= 10,
                                       validateMap= mapbiomas_i
-                                      );
+                                      );    
+  
     ## mask and rename 
-    selectedSegments = selectedSegments.selfMask().rename(['class']);
+    selectedSegments = selectedSegments.selfMask().rename(['class']);     
     
-    ## create percentil rule
-    percentil = segments.addBands(mapbiomas_i)\
-        .reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments'); 
- 
+    ## create percentil rule (crashes here - needs to select all classes, not only forest)
+    percentil = segments.addBands(mapbiomas_i).reduceConnectedComponents(ee.Reducer.percentile([5, 95]), 'segments');
+        
     ## validate and retain only segments with satifies percentil criterion
-    validated = percentil.select(0)\
-        .multiply(percentil.select(0).eq(percentil.select(1)));    
+    validated = percentil.select(0).multiply(percentil.select(0).eq(percentil.select(1)));  
     
     ## mask and rename 
-    selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated))\
-        .rename('class');
+    selectedSegmentsValidated = selectedSegments.mask(selectedSegments.eq(validated)).rename('class');
     
     ## define function to generate new samples based on validated segments
     def getNewSamples (image, extent):
@@ -181,4 +181,6 @@ for carta_i in summary:
     ## export
     task.start()
     print ('done! ======================= > next')
-    ## @ end of for @ ##      
+    ## @ end of for @ ## 
+
+
