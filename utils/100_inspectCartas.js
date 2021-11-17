@@ -1,4 +1,7 @@
-var pt = ee.FeatureCollection('projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-sentinel/SE-23-Y-B_v31');
+var cartas = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/cartas');
+Map.addLayer(cartas)
+
+var pt = ee.FeatureCollection('projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/samples-sentinel/SC-22-Z-C_v31');
 
 // color ramp module from mapbiomas 
 var vis = {
