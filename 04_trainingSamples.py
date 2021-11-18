@@ -1,9 +1,8 @@
-import ee
-
-ee.Initialize()
-
 ## STEP04 - Export yearly spectral signatures for each region ~ year to be used as training data
 ## Exported data is composed by spatialPoints with spectral signature values grouped by columns
+
+import ee
+ee.Initialize()
 
 ## define string to use as label metadata
 bioma = "CERRADO"    ## ibge's biome
