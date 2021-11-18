@@ -27,16 +27,16 @@ biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster')
 bioma250mil_CE = biomes.mask(biomes.eq(4))
 
 ## define regions to extract spectral signatures (spatial operator)
-regioes_lista = [     
-                       [1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9], [10], [11], 
-                       [12], [13], [14], [15], [16], [17], [18], [19], [20], [21], [22],
-                       [23], [24], [25], [26], [27], [28], [29], [30], [31], [32], [33], 
-                       [34], [35], [36], [37], [38]
+regioes_lista = [     [16]
+                       #[1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9], [10], [11], 
+                       #[12], [13], [14], [15], [16], [17], [18], [19], [20], [21], [22],
+                       #[23], [24], [25], [26], [27], [28], [29], [30], [31], [32], [33], 
+                       #[34], [35], [36], [37], [38]
                        ]
 
 ## define years to extract spectral signatures (temporal operator)
-anos = [   
-            2016, 2017, 2018, 2019, 2020
+anos = [   2020
+            #2016, 2017, 2018, 2019, 2020
 ]
 
 ## surface reflectance bandnames
@@ -105,7 +105,16 @@ for lista in regioes_lista:
         print('number of points: ', pts_reg.size().getInfo()) ## print number of points
         
         ## extract spectral signatures 
-        training = mosaicoTotal.sampleRegions(collection= pts_reg, scale= 10, geometries= True, tileScale= 2)
+        #training = mosaicoTotal.sampleRegions(collection= pts_reg, scale= 10, geometries= True, tileScale= 2)
+        
+        ## define function to extract spectral signatures
+        def extractSignatures(feature):
+            return mosaicoTotal.sampleRegions(collection= feature,
+                                              scale= 10,
+                                              geometries= True,
+                                              tileScale= 2)
+            
+        training = pts_reg.map(algorithm=extractSignatures)
         
         ## remove NA or NULL from extracted data
         training = training.filter(ee.Filter.notNull(bandNames))
