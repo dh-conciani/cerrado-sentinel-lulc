@@ -20,11 +20,12 @@ YEARS = [
 ## definir regiões para classificar
 REGION_IDS = [ 
     '1', '2', '3', '4', '5', '6', '7', 
-    '8', '9', '10', '11', '12', '13', '14',
-    '15', '16', '17', '18', '19', '20', '21',
-    '22', '23', '24', '25', '26', '27', '28', 
-    '29', '30', '31', '32', '33', '34', '35', 
-    '36', '37', '38'
+    '8', '9', '10', '11'
+    #'12', '13', '14',
+    #'15', '16', '17', '18', '19', '20', '21',
+    #'22', '23', '24', '25', '26', '27', '28', 
+    #'29', '30', '31', '32', '33', '34', '35', 
+    #'36', '37', '38'
 ]
 
 ## define band names to be used in the classification 
@@ -89,7 +90,7 @@ ASSET_MOSAICS = 'projects/nexgenmap/MapBiomas2/SENTINEL/mosaics'
 ### trainng samples 
 ASSET_SAMPLES = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/training-sentinel/train_col_6_CERRADO_reg'
 ### classification output
-ASSET_OUTPUT = 'users/dh-conciani/sentinel_beta/sentinel-classification/'
+ASSET_OUTPUT = 'users/dhconciani/sentinel-beta/sentinel-classification/'
 ### classification regions (vector)
 ASSET_REGIONS = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6'
 ### classification regions (raster)
