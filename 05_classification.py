@@ -137,8 +137,10 @@ for regionId in REGION_IDS:
         ## import training samples 
         samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)
                 #.filter(ee.Filter.neq("reference", 33))\
-                #.merge(water)         
-      
+                #.merge(water)
+                
+        ## remove samples with null values
+        samples = samples.filter(ee.Filter.notNull(train.first().propertyNames()))      
         
         ## import sentinel mosais
         mosaics = ee.ImageCollection(ASSET_MOSAICS)\
