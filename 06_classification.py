@@ -1,11 +1,13 @@
-## importar API 
+## perform classificatio nusing smileRandomForest classifier 
+
+## import gee api 
 import ee
 ee.Initialize()
 
-## definir strings para label 
+## define in/out properties 
 BIOME_NAME = "CERRADO"
-SAMPLES_VERSION = '11'
-OUTPUT_VERSION = '11'
+SAMPLES_VERSION = '31'
+OUTPUT_VERSION = '31'
 
 ## definir numero de árvores para o randomForest
 RF_TREES = 100
@@ -25,8 +27,7 @@ REGION_IDS = [
     '36', '37', '38'
 ]
 
-## defininir nomes das bandas
-## surface reflectance mosaic - todas as 90 bandas
+## define band names to be used in the classification 
 BAND_NAMES = [
           'blue_median', 'blue_median_wet', 'blue_median_dry', 'blue_min', 'blue_stdDev', 
           'green_median', 'green_median_dry', 'green_median_wet', 'green_median_texture', 'green_min', 'green_stdDev',
@@ -48,7 +49,7 @@ BAND_NAMES = [
           'soil_median', 'soil_amp', 'soil_stdDev',
           'cloud_median', 'cloud_stdDev', 
           'shade_median', 'shade_stdDev', 
-         'ndfi_median', 'ndfi_median_dry', 'ndfi_median_wet', 'ndfi_amp', 'ndfi_stdDev',
+          'ndfi_median', 'ndfi_median_dry', 'ndfi_median_wet', 'ndfi_amp', 'ndfi_stdDev',
           'sefi_median', 'sefi_stdDev', 'sefi_median_dry', 
           'wefi_median', 'wefi_median_wet', 'wefi_amp', 'wefi_stdDev',
           'slope', 'latitude', 'longitude',
@@ -82,23 +83,23 @@ BAND_NAMES = [
 #  ]
 
 
-## definir assets
-### mosaicos da coleção 6 - surface reflectance
+## define input assets
+### sentinel mosaics to be classified 
 ASSET_MOSAICS = 'projects/nexgenmap/MapBiomas2/SENTINEL/mosaics'
-### amostras de treinamento 
+### trainng samples 
 ASSET_SAMPLES = 'projects/mapbiomas-workspace/AMOSTRAS/Cerrado/col6/training-sentinel/train_col_6_CERRADO_reg'
-### output da classificação 
-ASSET_OUTPUT = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/'
-### asset de regiões (vetor)
+### classification output
+ASSET_OUTPUT = 'users/dh-conciani/sentinel_beta/sentinel-classification/'
+### classification regions (vector)
 ASSET_REGIONS = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6'
-### asset das regiões (raster)
+### classification regions (raster)
 ASSET_REGIONS_RASTER = "users/dhconciani/base/cerrado_regioes_c6_rasterBands"
-### asset de biomas (vetor)
+### biomes (vector)
 ASSET_BIOMESVECTOR = 'projects/mapbiomas-workspace/AUXILIAR/biomas-2019'
-### asset de biomas (raster)
+### biomes_raster)
 ASSET_BIOMESRASTER = 'projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster'
 
-## classificação
+## define function to mask classification for the region 
 def maskCollections(ic, reg):
     
     def maskImg (img):
@@ -108,48 +109,34 @@ def maskCollections(ic, reg):
     masked = ic.map(maskImg)
     return masked
 
-# Script
+# import regions 
 regions = ee.FeatureCollection(ASSET_REGIONS)
 ic_regions = ee.ImageCollection(ASSET_REGIONS_RASTER)
 
-
+## for each region 
 for regionId in REGION_IDS:
-
+    
+    ## select region [i]
     region = regions.filterMetadata('mapb', 'equals', int(regionId)).geometry().bounds()
     region_ras = ic_regions.filterMetadata('mapb', 'equals', regionId)
-    #YEARS = DICT_YEARS[regionId]
-    YEARS = YEARS
     print("region:", regionId)
-
+    
+    ## for each year
     for year in YEARS:
         print("year:", year)
+        ## create a ''time marker'' to be used in the stack operation 
         time_marker = int(year) - 2016
-        #print ("years since first year:", time_marker)
         
-        ## if region is equal to 29, load unfiltered dataset
-        if (regionId == '29'):
-            print ('using UNfiltered samples')
-            ## remove smaples from water - avoid commission errors         
-            water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
-                .filter(ee.Filter.eq("reference", 33))\
-                .filter(ee.Filter.eq("slope", 0))\
-                .limit(175)
-            
-            samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)\
-                .filter(ee.Filter.neq("reference", 33))\
-                .merge(water)
-            
-        ## else, use filtered data        
-        else:
-            print ('using filteted samples')
-            water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION + '_filtered')\
-                .filter(ee.Filter.eq("reference", 33))\
-                .filter(ee.Filter.eq("slope", 0))\
-                .limit(175)
-            
-            samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION + '_filtered')\
-                .filter(ee.Filter.neq("reference", 33))\
-                .merge(water)         
+        ## limimt the number of water samples 
+        #water = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION + '_filtered')\
+        #    .filter(ee.Filter.eq("reference", 33))\
+        #    .filter(ee.Filter.eq("slope", 0))\
+        #    .limit(175)
+        
+        ## import training samples 
+        samples = ee.FeatureCollection(ASSET_SAMPLES + regionId + '_ano_' + str(year) + '_' + SAMPLES_VERSION)
+                #.filter(ee.Filter.neq("reference", 33))\
+                #.merge(water)         
       
         
         ## import sentinel mosais
@@ -185,14 +172,14 @@ for regionId in REGION_IDS:
         # samples
         samplesTotal = samples.filter(
             ee.Filter.inList(
-                "reference",
-                [3, 4, 11, 12, 15, 19, 21, 33, 25]
+                "class",
+                [3, 4, 11, 12, 15, 19, 9, 25, 33]
             )
         )
 
-        # classification
+        # train classifier 
         classifier = ee.Classifier.smileRandomForest(numberOfTrees=RF_TREES)\
-            .train(samplesTotal, 'reference', BAND_NAMES)
+            .train(samplesTotal, 'class', BAND_NAMES)
 
         classified = mosaicTotal.classify(classifier).mask(mosaicTotal.select('red_median'))
 
@@ -201,7 +188,7 @@ for regionId in REGION_IDS:
 
         # set properties
         classified = classified\
-            .set('collection', '6')\
+            .set('collection', 'beta')\
             .set('version', int(OUTPUT_VERSION))\
             .set('biome', BIOME_NAME)\
             .set('mapb', int(regionId))\
