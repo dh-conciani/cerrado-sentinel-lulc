@@ -6,7 +6,7 @@
 // import sentinel classification
 var dir = 'users/dhconciani/sentinel-beta/sentinel-classification';
 var file_in = 'CERRADO_sentinel_gapfill_v31';
-var file_out = 'CERRADO_sentinel_gapfill_v31';
+var file_out = 'CERRADO_sentinel_gapfill_wetfor_v31';
 
 // import sentinel classification
 var classification = ee.Image(dir + '/' + file_in);
@@ -18,7 +18,7 @@ var aoi = ee.Image('projects/mapbiomas-workspace/AUXILIAR/CERRADO/c6-wetlands/in
 var ucs = ee.Image('users/dhconciani/base/raster_ucs_cerrado_2019_withoutAPAs_mask');
 
 // define years to be assessed
-var list_years = ['2016'];
+var list_years = ['2016', '2017', '2018', '2019', '2020'];
 
 // import mapbiomas color ramp
 var vis = {
@@ -60,13 +60,18 @@ list_years.forEach(function(year_i) {
   // blend
       filtered_i = filtered_i.blend(filtered_forestry_uc);
       
-  // convert forestry outside protected areas to mosaic of agriculture and pasture
-  var filtered_outside = filtered_i.updateMask(ucs.neq(1));
-      filtered_outside = filtered_outside.remap([3, 4, 9,  11, 12, 15, 19, 21, 25, 33],
-                                                [3, 4, 21, 11, 12, 15, 19, 21, 25, 33]);
-                                                
+  // if forestry is within HAND < 5 (riparian), convert to forest
+  var filtered_forest = filtered_i.updateMask(aoi.eq(1));
+      filtered_forest = filtered_forest.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
+                                              [3, 4, 3, 11, 12, 15, 19, 21, 25, 33]);
+
   // blend
-      filtered_i = filtered_i.blend(filtered_outside);
+      filtered_i = filtered_i.blend(filtered_forest);
+      
+  // remmap all farming to 21
+      filtered_i = filtered_i.remap([3, 4, 9,  11, 12, 15, 19, 21, 25, 33],
+                                    [3, 4, 21, 11, 12, 21, 21, 21, 25, 33])
+                                    .rename('classification_' + year_i);
 
   // add bands into recipe
   recipe = recipe.addBands(filtered_i);
