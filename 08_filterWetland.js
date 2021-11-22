@@ -4,9 +4,9 @@
 // dhemerson.costa@ipam.org.br
 
 // import sentinel classification
-var dir = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var file_in = 'CERRADO_sentinel_gapfill_v11';
-var file_out = 'CERRADO_sentinel_gapfill_wetland_v11';
+var dir = 'users/dhconciani/sentinel-beta/sentinel-classification';
+var file_in = 'CERRADO_sentinel_gapfill_v31';
+var file_out = 'CERRADO_sentinel_gapfill_v31';
 
 // import sentinel classification
 var classification = ee.Image(dir + '/' + file_in);
@@ -18,7 +18,7 @@ var aoi = ee.Image('projects/mapbiomas-workspace/AUXILIAR/CERRADO/c6-wetlands/in
 var ucs = ee.Image('users/dhconciani/base/raster_ucs_cerrado_2019_withoutAPAs_mask');
 
 // define years to be assessed
-var list_years = ['2016', '2017', '2018', '2019', '2020'];
+var list_years = ['2016'];
 
 // import mapbiomas color ramp
 var vis = {
@@ -48,19 +48,35 @@ list_years.forEach(function(year_i) {
   var filtered_uc = classification_naoi.updateMask(ucs.eq(1));
       filtered_uc = filtered_uc.remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
                                       [3, 4, 12, 12, 15, 19, 21, 25, 33]);
-                                      
+  
   // blend
       filtered_i = filtered_i.blend(filtered_uc);
-                                      
+
+  // if forestry is within protected areas, convert to forest
+  var filtered_forestry_uc = filtered_i.updateMask(ucs.eq(1));
+      filtered_forestry_uc = filtered_forestry_uc.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
+                                                        [3, 4, 3, 11, 12, 15, 19, 21, 25, 33]);
+  
+  // blend
+      filtered_i = filtered_i.blend(filtered_forestry_uc);
+      
+  // convert forestry outside protected areas to mosaic of agriculture and pasture
+  var filtered_outside = filtered_i.updateMask(ucs.neq(1));
+      filtered_outside = filtered_outside.remap([3, 4, 9,  11, 12, 15, 19, 21, 25, 33],
+                                                [3, 4, 21, 11, 12, 15, 19, 21, 25, 33]);
+                                                
+  // blend
+      filtered_i = filtered_i.blend(filtered_outside);
+
   // add bands into recipe
   recipe = recipe.addBands(filtered_i);
   });
 
 // plot AOI
 //Map.addLayer(aoi, {palette: ['black', 'red', 'red'], min:0, max:2}, 'aoi');
-Map.addLayer(classification.select(['classification_2020']), vis, 'classification');
+Map.addLayer(classification.select(['classification_2016']), vis, 'classification');
 print (recipe);
-Map.addLayer(recipe.select(['classification_2020']), vis, 'filtered');
+Map.addLayer(recipe.select(['classification_2016']), vis, 'filtered');
 
 // export as GEE asset
 Export.image.toAsset({
