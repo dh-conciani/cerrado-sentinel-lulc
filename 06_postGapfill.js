@@ -17,17 +17,17 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
 
 // define strings to be used as metadata
 // input version
-var dircol6 = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel';
-var version = 11;    
+var dircol6 = 'users/dhconciani/sentinel-beta/sentinel-classification';
+var version = 31;    
 var bioma = "CERRADO";
 
 // queens case
 var VeightConnected = true;
 
 // define prefix for the output filename
-var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
+var dirout = 'users/dhconciani/sentinel-beta/sentinel-classification/';
 var prefixo_out = 'CERRADO_sentinel_gapfill_v';
-var version_out = '11';     
+var version_out = '31';     
 
 // dewfine year to plot a inspect
 var ano = 2020;
