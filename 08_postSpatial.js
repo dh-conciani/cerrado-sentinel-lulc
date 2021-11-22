@@ -1,98 +1,93 @@
-// filter wetlands (11) by using an AOI created from HAND (15m)
-// convert wetland outside AOI to mosaic (21) 
-// convert wetland outside AOI and within protected areas to grassland (12)
-// dhemerson.costa@ipam.org.br
+// define geometry (raw extent of cerrado)
+var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-42.306314047317365, -1.7207103925816054],
+          [-44.415689047317365, -1.4571401339250152],
+          [-54.259439047317365, -10.451581892159153],
+          [-61.202798422317365, -10.624398320896237],
+          [-61.202798422317365, -14.739254413487872],
+          [-57.775064047317365, -18.027281070807337],
+          [-59.005532797317365, -23.85214541157912],
+          [-48.370767172317365, -25.84584109333063],
+          [-40.548501547317365, -17.52511660076233],
+          [-40.636392172317365, -2.774571568871124]]]);
 
-// import sentinel classification
-var dir = 'users/dhconciani/sentinel-beta/sentinel-classification';
-var file_in = 'CERRADO_sentinel_gapfill_v31';
-var file_out = 'CERRADO_sentinel_gapfill_wetfor_v31';
+var bioma = "CERRADO";
+var dirout = 'users/dhconciani/sentinel-beta/sentinel-classification/';
+var file_in = 'CERRADO_sentinel_gapfill_wetfor_v31';
+var file_out = 'CERRADO_sentinel_gapfill_wetfor_spatial_v';
+var version_out = 31;
 
-// import sentinel classification
-var classification = ee.Image(dir + '/' + file_in);
+// read image
+var class4GAP = ee.Image(dirout + file_in);
 
-// import AOI
-var aoi = ee.Image('projects/mapbiomas-workspace/AUXILIAR/CERRADO/c6-wetlands/input_masks/aoi_wetlands_c6');
+// spatial filter (0.5 ha)
+var filter_lte = 50;
 
-// import protected areas
-var ucs = ee.Image('users/dhconciani/base/raster_ucs_cerrado_2019_withoutAPAs_mask');
-
-// define years to be assessed
-var list_years = ['2016', '2017', '2018', '2019', '2020'];
-
-// import mapbiomas color ramp
+// mapbiomas color ramp
 var vis = {
-    'min': 0,
-    'max': 49,
-    'palette': require('users/mapbiomas/modules:Palettes.js').get('classification6')
-};
+      bands: 'classification_2016',
+      min:0,
+      max:49,
+      palette: require('users/mapbiomas/modules:Palettes.js').get('classification6'),
+      format: 'png'
+    };
 
-// define recipe
-var recipe = ee.Image([]);
-// filter wetlands
-list_years.forEach(function(year_i) {
-  // read classification for the year [i]
-  var classification_i = classification.select(['classification_' + year_i]);
+// plot classification 
+Map.addLayer(class4GAP, vis, 'classification');
 
-  // subset classification in areas with HAND > 15m (AOI = 0)
-  var classification_naoi = classification_i.updateMask(aoi.eq(0));
+// start year
+var ano = '2016';
 
-  // filter wetlands outside AOI 
-  var filtered_i =  classification_naoi.remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
-                                              [3, 4, 21, 12, 15, 19, 21, 25, 33]);
-                                           
-  // blend with original data
-     filtered_i = classification_i.blend(filtered_i);
-     
-  // if wetland is outside AOI (HAND > 15m) and within protected area, convert to grassland
-  var filtered_uc = classification_naoi.updateMask(ucs.eq(1));
-      filtered_uc = filtered_uc.remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
-                                      [3, 4, 12, 12, 15, 19, 21, 25, 33]);
-  
-  // blend
-      filtered_i = filtered_i.blend(filtered_uc);
+// extract mode by using neighbors
+var moda_16 = class4GAP.select('classification_'+ ano).focal_mode(1, 'square', 'pixels');
 
-  // if forestry is within protected areas, convert to forest
-  var filtered_forestry_uc = filtered_i.updateMask(ucs.eq(1));
-      filtered_forestry_uc = filtered_forestry_uc.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
-                                                        [3, 4, 3, 11, 12, 15, 19, 21, 25, 33]);
-  
-  // blend
-      filtered_i = filtered_i.blend(filtered_forestry_uc);
-      
-  // if forestry is within HAND < 5 (riparian), convert to forest
-  var filtered_forest = filtered_i.updateMask(aoi.eq(1));
-      filtered_forest = filtered_forest.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
-                                              [3, 4, 3, 11, 12, 15, 19, 21, 25, 33]);
+// compute number of connections with same class
+var conn = class4GAP.select('classification_'+ ano).connectedPixelCount(100,false).rename('connect_' + ano);
 
-  // blend
-      filtered_i = filtered_i.blend(filtered_forest);
-      
-  // remmap all farming to 21
-      filtered_i = filtered_i.remap([3, 4, 9,  11, 12, 15, 19, 21, 25, 33],
-                                    [3, 4, 21, 11, 12, 21, 21, 21, 25, 33])
-                                    .rename('classification_' + year_i);
-                                    
+// mask pixels connect with less than [x] of same class 
+moda_16 = moda_16.mask(conn.select('connect_'+ ano).lte(filter_lte));
 
-  // add bands into recipe
-  recipe = recipe.addBands(filtered_i);
-  });
+// define values to be used in case of replace 
+var class_outTotal = class4GAP.select('classification_'+ ano).blend(moda_16);
 
-// plot AOI
-//Map.addLayer(aoi, {palette: ['black', 'red', 'red'], min:0, max:2}, 'aoi');
-Map.addLayer(classification.select(['classification_2016']), vis, 'classification');
-print (recipe);
-Map.addLayer(recipe.select(['classification_2016']), vis, 'filtered');
+// plot values to be used in case of replace
+Map.addLayer(class_outTotal, vis, 'filtered');
 
+// define years to be filtered
+var anos = ['2017','2018', '2019', '2020'];
+
+// filter 
+// for each year
+for (var i_ano=0;i_ano<anos.length; i_ano++) {  
+  // extract year vlaue
+  var ano = anos[i_ano];
+  // compute the neighbor mode
+  var moda = class4GAP.select('classification_'+ ano).focal_mode(1, 'square', 'pixels');
+  // compute the numbver of connections with same class
+  var conn = class4GAP.select('classification_'+ano).connectedPixelCount(100,false).rename('connect_'+ ano);
+  // filter using the number of connections
+  moda = moda.mask(conn.select('connect_'+ ano).lte(filter_lte));
+  var class_out = class4GAP.select('classification_'+ ano).blend(moda);
+  // add filtered as band
+  class_outTotal = class_outTotal.addBands(class_out);
+}
+
+class_outTotal = class_outTotal.reproject('EPSG:4326', null, 10);
+
+// print result
+print(class_outTotal);
+class_outTotal = class_outTotal.set("version", version_out)
+                               .set("step", "spatial");
+                               
 // export as GEE asset
 Export.image.toAsset({
-    'image': recipe,
-    'description': file_out,
-    'assetId': dir + '/' + file_out,
+    'image': class_outTotal,
+    'description': file_out + version_out,
+    'assetId': dirout + file_out + version_out,
     'pyramidingPolicy': {
         '.default': 'mode'
     },
-    'region': recipe.geometry(),
+    'region': geometry,
     'scale': 10,
     'maxPixels': 1e13
 });
