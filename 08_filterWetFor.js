@@ -1,6 +1,8 @@
-// filter wetlands (11) by using an AOI created from HAND (15m)
-// convert wetland outside AOI to mosaic (21) 
-// convert wetland outside AOI and within protected areas to grassland (12)
+// convert wetland (11) with HAND > 15 to mosaic (21)
+// convert wetland (11) outside AOI and within protected areas to grassland (12)
+// convert forestry (9) within protected areas to forest (3)
+// convert forestry (9) with HAND <5 to forest (3)
+// convert all farming (9, 15 and 19) to 21 
 // dhemerson.costa@ipam.org.br
 
 // import sentinel classification
