@@ -36,6 +36,7 @@ Map.addLayer(mosaic, {
     'gamma': 0.85
 }, 'Sentinel ' + year, true);
 
-Map.addLayer(collection.select(['classification_2019']), vis, 'beta');
-Map.addLayer(col6.select(['classification_2019']).updateMask(collection.select(['classification_2019'])), vis, 'col6');
+Map.addLayer(collection.select(['classification_' + year]), vis, 'beta');
+Map.addLayer(col6.select(['classification_' + year])
+                  .updateMask(collection.select(['classification_' + year])), vis, 'col6');
                   
