@@ -2,10 +2,10 @@
 
 // define settings
 var bioma = "CERRADO";
-var file_in = bioma + '_sentinel_gapfill_wetland_temporal_spatial_v11';
-var file_out = bioma + '_sentinel_gapfill_wetland_temporal_spatial_freq_v';
-var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
-var version_out = 11;
+var file_in = bioma + '_sentinel_gapfill_wetfor_spatial_v31';
+var file_out = bioma + '_sentinel_gapfill_wetfor_spatial_freq_v';
+var dirout = 'users/dhconciani/sentinel-beta/sentinel-classification/';
+var version_out = 31;
 
 // import classification
 var class4 = ee.Image(dirout + file_in);
@@ -22,7 +22,7 @@ var vis = {
 // compute frequency 
 var filtrofreq = function(mapbiomas){
   // calc expression 
- var exp = '100*((b(0)+b(1)+b(2)+b(3)+b(4))/6 )';
+ var exp = '100*((b(0)+b(1)+b(2)+b(3)+b(4))/5 )';
 
   // get frequency
   var florFreq = mapbiomas.eq(3).expression(exp);
@@ -36,10 +36,10 @@ var filtrofreq = function(mapbiomas){
 
   // define rules per class
   var  vegMap = ee.Image(0)
-                          .where(vegMask.eq(1).and(florFreq.gt(50)), 3)
-                          .where(vegMask.eq(1).and(wetFreq.gt(50)), 11)
+                          .where(vegMask.eq(1).and(florFreq.gt(59)), 3)
                           .where(vegMask.eq(1).and(grassFreq.gt(50)), 12)
-                          .where(vegMask.eq(1).and(savFreq.gt(50)), 4);
+                          .where(vegMask.eq(1).and(savFreq.gt(50)), 4)
+                          .where(vegMask.eq(1).and(wetFreq.gt(30)), 11);
   
   // update with results
   vegMap = vegMap.updateMask(vegMap.neq(0));
