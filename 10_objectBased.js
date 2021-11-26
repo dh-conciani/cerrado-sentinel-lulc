@@ -1,5 +1,5 @@
-// post-process by using object-based approach 
-// dhemerson.costa@ipam.org.br
+// define year
+var year = 2020;
 
 // import cerrado
 var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
@@ -20,6 +20,7 @@ var mosaic = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics'
     .mosaic()
     .updateMask(cerrado.eq(4));
                   
+// import mapbiomas pallete
 // import the color ramp module from mapbiomas 
 var palettes = require('users/mapbiomas/modules:Palettes.js');
 var vis = {
@@ -34,3 +35,43 @@ Map.addLayer(mosaic, {
     'gain': [0.08, 0.07, 0.2],
     'gamma': 0.85
 }, 'Sentinel ' + year, true);
+
+// plot mapbiomas
+Map.addLayer(collection.select(['classification_' + year]), vis, 'classification ' + year);
+
+// define bands to be used in segmentation 
+var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
+
+// define function to compute segments
+var getSegments = function (image, size) {
+  // define seed
+    var seeds = ee.Algorithms.Image.Segmentation.seedGrid(
+        {
+            size: size,
+            gridType: 'square'
+        }
+    );
+  // create segments by using SNIC
+    var snic = ee.Algorithms.Image.Segmentation.SNIC({
+        image: image,
+        size: size,
+        compactness: 1,
+        connectivity: 8,
+        neighborhoodSize: 2 * size,
+        seeds: seeds
+    });
+  // paste proerties
+    snic = ee.Image(
+        snic.copyProperties(image)
+            .copyProperties(image, ['system:footprint'])
+            .copyProperties(image, ['system:time_start']));
+
+    return snic.select(['clusters'], ['segments']);
+};
+
+// create segments
+var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 16)
+                  .reproject('EPSG:4326', null, 10);
+                  
+// inspect
+Map.addLayer(segments.randomVisualizer(), {}, 'segments');
