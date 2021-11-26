@@ -110,4 +110,14 @@ var count = classification_i.reduceRegion({
                   tileScale: 7
                   });
 
-print (ee.List(count.get('classification_' + year)));
+// create dictionary of pixel count
+var values = ee.Dictionary(count.get(classification_i.bandNames().get(0)));
+
+// extract majority class
+var majority_n = values.values().reduce('max'); 
+
+
+
+
+print (majority_n)
+print (values.getNumber(majority_n))
