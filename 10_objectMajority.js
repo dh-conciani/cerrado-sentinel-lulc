@@ -119,8 +119,19 @@ var majority_class = ee.Number.parse(values.keys()
                             values.values().reduce('max'))
                           )
                         );
+
+print (majority_class);
+print (values.keys().size());
+
+print(
   
-print (majority_class.add(1));
+  ee.List(majority_class).repeat(values.keys().size())
+  
+  );
+
+
+
+
 
 // apply majority rule for all segments
 //var segment_i_major = segment_i.remap(ee.List(values.keys()),
