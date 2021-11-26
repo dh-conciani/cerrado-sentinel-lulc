@@ -1,3 +1,6 @@
+// post-process by using object-based approach 
+// dhemerson.costa@ipam.org.br
+
 // import cerrado
 var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
@@ -17,7 +20,6 @@ var mosaic = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics'
     .mosaic()
     .updateMask(cerrado.eq(4));
                   
-// import mapbiomas pallete
 // import the color ramp module from mapbiomas 
 var palettes = require('users/mapbiomas/modules:Palettes.js');
 var vis = {
