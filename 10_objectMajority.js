@@ -56,7 +56,7 @@ var getSegments = function (image, size) {
     var snic = ee.Algorithms.Image.Segmentation.SNIC({
         image: image,
         size: size,
-        compactness: 1,
+        compactness: 0.1,
         connectivity: 8,
         neighborhoodSize: 2 * size,
         seeds: seeds
@@ -71,7 +71,7 @@ var getSegments = function (image, size) {
 };
 
 // create segments
-var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 25)
+var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 10)
                   .reproject('EPSG:4326', null, 10);
                   
 // inspect
@@ -90,6 +90,58 @@ var getUnique = function (image, feature) {
 
     // remove all the unnecessary reducer output structure and make a list of values
     return ee.Dictionary(unique.get(image.bandNames().get(0)))
+                .keys()
+                .map(ee.Number.parse);
+  };
+
+// get unique values
+var unique_values = getUnique(segments, geometry);
+
+// create recipe 
+var recipe = collection.clip(geometry);
+
+// for each segment
+unique_values.getInfo().forEach(function (segment_n) {
+  
+  // get mapbiomas classification only for each segment
+  var segment_i = collection.updateMask(segments.eq(ee.Number(segment_n)));
+                  //Map.addLayer(segment_i, vis, 'segment ' + segment_n);
+                  
+  // perform pixel count 
+  var count = segment_i.reduceRegion({
+                    reducer: ee.Reducer.frequencyHistogram(),
+                    geometry : geometry,
+                    scale: 10, 
+                    bestEffort: true,
+                    tileScale: 7
+                    });
+                    
+  // create dictionary of pixel count
+  var values = ee.Dictionary(count.get(segment_i.bandNames().get(0)));
+  
+  // extract the major class by using the position of the maximum per class pixel count
+  var majority_class = ee.Number.parse(values.keys()
+                              .get(values.values().indexOf(
+                              values.values().reduce('max'))
+                            )
+                          );
+                          
+  // apply majority rule for all segments
+  var segment_i_major = segment_i.remap(ee.List(values.keys().map(ee.Number.parse)), // from
+                                        // to
+                                          ee.List.sequence(0, values.keys().size().subtract(1), 1) //.getInfo()
+                                          .map(function (i) {
+                                            return majority_class }
+                                            )
+                                          );
+                                          
+  // blend over recipe
+  recipe = recipe.blend(segment_i_major);
+});
+
+Map.addLayer(recipe, vis, 'rect');
+
+bandNames().get(0)))
                 .keys()
                 .map(ee.Number.parse);
   };
