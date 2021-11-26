@@ -6,6 +6,7 @@ var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster
 
 // read collection
 var collection = ee.Image('users/dhconciani/sentinel-beta/sentinel-classification/CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31')
+                  .select(['classification_' + year])
                   .updateMask(cerrado.eq(4));
                   
 // read collection 6
@@ -76,9 +77,9 @@ var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 25)
 // inspect
 Map.addLayer(segments.randomVisualizer(), {}, 'segments');
 
-// extract unique id values from segments
+// get unique id values from segments
 var getUnique = function (image, feature) {
-  // get unique values from segments IDs
+  // apply pixel count
    var unique = image.reduceRegion({
                     reducer: ee.Reducer.frequencyHistogram(),
                     geometry : feature,
@@ -96,12 +97,17 @@ var getUnique = function (image, feature) {
 // get unique values
 var unique_values = getUnique(segments, geometry);
 
-// get only one segment
-var segment_i = segments.updateMask(segments.eq(ee.Number(unique_values.get(0))));
-                Map.addLayer(segment_i.randomVisualizer(), {}, 'segment_i');
-                
+// get mapbiomas classification only for each segment
+var classification_i = collection.updateMask(segments.eq(ee.Number(unique_values.get(0))));
+                       Map.addLayer(classification_i, vis, 'classification_i');
+                       
+// perform pixel count 
+var count = classification_i.reduceRegion({
+                  reducer: ee.Reducer.frequencyHistogram(),
+                  geometry : geometry,
+                  scale: 10, 
+                  bestEffort: true,
+                  tileScale: 7
+                  });
 
-
-
-
-
+print (ee.List(count.get('classification_' + year)));
