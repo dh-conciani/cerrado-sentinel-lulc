@@ -133,11 +133,24 @@ var data = unique_values.map(function (segment_n) {
                                             )
                                           );
   
-  return segment_i_major;
+  return segment_i_major.toInt();
 });
 
-print (data);
-Map.add
+// transform into a image
+var data = ee.ImageCollection(data).mosaic();
+
+// export as GEE asset
+Export.image.toAsset({
+    'image': data,
+    'description': 'test_1',
+    'assetId': 'users/dh-conciani/test-sentinel' + '/' + 'test_1',
+    'pyramidingPolicy': {
+        '.default': 'mode'
+    },
+    'region': geometry,
+    'scale': 10,
+    'maxPixels': 1e13
+});
 
 /*   
 // create recipe 
