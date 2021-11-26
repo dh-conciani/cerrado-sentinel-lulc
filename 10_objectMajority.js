@@ -98,11 +98,11 @@ var getUnique = function (image, feature) {
 var unique_values = getUnique(segments, geometry);
 
 // get mapbiomas classification only for each segment
-var classification_i = collection.updateMask(segments.eq(ee.Number(unique_values.get(0))));
-                       Map.addLayer(classification_i, vis, 'classification_i');
+var segment_i = collection.updateMask(segments.eq(ee.Number(unique_values.get(0))));
+                       Map.addLayer(segment_i, vis, 'classification_i');
                        
 // perform pixel count 
-var count = classification_i.reduceRegion({
+var count = segment_i.reduceRegion({
                   reducer: ee.Reducer.frequencyHistogram(),
                   geometry : geometry,
                   scale: 10, 
@@ -111,10 +111,19 @@ var count = classification_i.reduceRegion({
                   });
 
 // create dictionary of pixel count
-var values = ee.Dictionary(count.get(classification_i.bandNames().get(0)));
+var values = ee.Dictionary(count.get(segment_i.bandNames().get(0)));
 
 // extract the major class by using the position of the maximum per class pixel count
-var majority_class = values.keys().get(values.values().indexOf(
-                            values.values().reduce('max')));
-                            
-// reclassify segment 
+var majority_class = ee.Number.parse(values.keys()
+                            .get(values.values().indexOf(
+                            values.values().reduce('max'))
+                          )
+                        );
+  
+print (majority_class.add(1));
+
+// apply majority rule for all segments
+//var segment_i_major = segment_i.remap(ee.List(values.keys()),
+//                                      ee.List(majority_class));
+                                      
+//Map.addLayer(segment_i_major, vis, 'rect');
