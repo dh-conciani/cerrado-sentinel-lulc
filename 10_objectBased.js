@@ -70,8 +70,38 @@ var getSegments = function (image, size) {
 };
 
 // create segments
-var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 16)
+var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 25)
                   .reproject('EPSG:4326', null, 10);
                   
 // inspect
 Map.addLayer(segments.randomVisualizer(), {}, 'segments');
+
+// extract unique id values from segments
+var getUnique = function (image, feature) {
+  // get unique values from segments IDs
+   var unique = image.reduceRegion({
+                    reducer: ee.Reducer.frequencyHistogram(),
+                    geometry : feature,
+                    scale: 10, 
+                    bestEffort: true,
+                    tileScale: 7
+                    });
+
+    // remove all the unnecessary reducer output structure and make a list of values
+    return ee.Dictionary(unique.get(image.bandNames().get(0)))
+                .keys()
+                .map(ee.Number.parse);
+  };
+
+// get unique values
+var unique_values = getUnique(segments, geometry);
+
+// get only one segment
+var segment_i = segments.updateMask(segments.eq(ee.Number(unique_values.get(0))));
+                Map.addLayer(segment_i.randomVisualizer(), {}, 'segment_i');
+                
+
+
+
+
+
