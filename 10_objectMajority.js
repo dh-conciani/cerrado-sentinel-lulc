@@ -31,14 +31,14 @@ var vis = {
 };
 
 // plot sentinel mosaic
-Map.addLayer(mosaic, {
+Map.addLayer(mosaic.clip(geometry), {
     'bands': ['swir1_median', 'nir_median', 'red_median'],
     'gain': [0.08, 0.07, 0.2],
     'gamma': 0.85
 }, 'Sentinel ' + year, true);
 
 // plot mapbiomas
-Map.addLayer(collection.select(['classification_' + year]), vis, 'classification ' + year);
+Map.addLayer(collection.select(['classification_' + year]).clip(geometry), vis, 'classification ' + year);
 
 // define bands to be used in segmentation 
 var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
@@ -97,37 +97,47 @@ var getUnique = function (image, feature) {
 // get unique values
 var unique_values = getUnique(segments, geometry);
 
-// get mapbiomas classification only for each segment
-var segment_i = collection.updateMask(segments.eq(ee.Number(unique_values.get(150))));
-                       Map.addLayer(segment_i, vis, 'classification_i');
-                       
-// perform pixel count 
-var count = segment_i.reduceRegion({
-                  reducer: ee.Reducer.frequencyHistogram(),
-                  geometry : geometry,
-                  scale: 10, 
-                  bestEffort: true,
-                  tileScale: 7
-                  });
+// create recipe 
+var recipe = collection.clip(geometry);
 
-// create dictionary of pixel count
-var values = ee.Dictionary(count.get(segment_i.bandNames().get(0)));
+// for each segment
+unique_values.getInfo().forEach(function (segment_n) {
+  
+  // get mapbiomas classification only for each segment
+  var segment_i = collection.updateMask(segments.eq(ee.Number(segment_n)));
+                  //Map.addLayer(segment_i, vis, 'segment ' + segment_n);
+                  
+  // perform pixel count 
+  var count = segment_i.reduceRegion({
+                    reducer: ee.Reducer.frequencyHistogram(),
+                    geometry : geometry,
+                    scale: 10, 
+                    bestEffort: true,
+                    tileScale: 7
+                    });
+                    
+  // create dictionary of pixel count
+  var values = ee.Dictionary(count.get(segment_i.bandNames().get(0)));
+  
+  // extract the major class by using the position of the maximum per class pixel count
+  var majority_class = ee.Number.parse(values.keys()
+                              .get(values.values().indexOf(
+                              values.values().reduce('max'))
+                            )
+                          );
+                          
+  // apply majority rule for all segments
+  var segment_i_major = segment_i.remap(ee.List(values.keys().map(ee.Number.parse)), // from
+                                        // to
+                                          ee.List.sequence(0, values.keys().size().subtract(1), 1) //.getInfo()
+                                          .map(function (i) {
+                                            return majority_class }
+                                            )
+                                          );
+                                          
+  // blend over recipe
+  recipe = recipe.blend(segment_i_major);
+});
 
-// extract the major class by using the position of the maximum per class pixel count
-var majority_class = ee.Number.parse(values.keys()
-                            .get(values.values().indexOf(
-                            values.values().reduce('max'))
-                          )
-                        );
+//Map.addLayer(recipe, vis, 'rect');
 
-
-// apply majority rule for all segments
-var segment_i_major = segment_i.remap(ee.List(values.keys().map(ee.Number.parse)), // from
-                                      // to
-                                        ee.List.sequence(0, values.keys().size().subtract(1), 1) //.getInfo()
-                                        .map(function (i) {
-                                          return majority_class }
-                                          )
-                                        );
-                                      
-Map.addLayer(segment_i_major, vis, 'rect');
