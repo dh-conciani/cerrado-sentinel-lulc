@@ -120,21 +120,13 @@ var majority_class = ee.Number.parse(values.keys()
                           )
                         );
 
-print (majority_class);
-print (values.keys().size());
-
-print(
-  
-  ee.List(majority_class).repeat(values.keys().size())
-  
-  );
-
-
-
-
 
 // apply majority rule for all segments
-//var segment_i_major = segment_i.remap(ee.List(values.keys()),
-//                                      ee.List(majority_class));
+var segment_i_major = segment_i.remap(ee.List(values.keys().map(ee.Number.parse)),
+                                      ee.List.sequence(0, values.keys().size().subtract(1), 1) //.getInfo()
+                                        .map(function (i) {
+                                          return majority_class }
+                                          )
+                                        );
                                       
-//Map.addLayer(segment_i_major, vis, 'rect');
+Map.addLayer(segment_i_major, vis, 'rect');
