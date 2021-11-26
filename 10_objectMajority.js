@@ -41,7 +41,7 @@ Map.addLayer(mosaic.clip(geometry), {
 Map.addLayer(collection.select(['classification_' + year]).clip(geometry), vis, 'classification ' + year);
 
 // define bands to be used in segmentation 
-var segment_bands = ["blue_median", "green_median", "red_median", "nir_median", "swir1_median", "swir2_median"];
+var segment_bands = ["red_median", "nir_median", "swir1_median"];
 
 // define function to compute segments
 var getSegments = function (image, size) {
@@ -96,7 +96,9 @@ var getUnique = function (image, feature) {
 
 // get unique values
 var unique_values = getUnique(segments, geometry);
+    //print (unique_values);
 
+/*   
 // create recipe 
 var recipe = collection.clip(geometry);
 
@@ -140,3 +142,5 @@ unique_values.getInfo().forEach(function (segment_n) {
 });
 
 Map.addLayer(recipe, vis, 'rect');
+
+*/
