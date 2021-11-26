@@ -113,11 +113,8 @@ var count = classification_i.reduceRegion({
 // create dictionary of pixel count
 var values = ee.Dictionary(count.get(classification_i.bandNames().get(0)));
 
-// extract majority class
-var majority_n = values.values().reduce('max'); 
-
-
-
-
-print (majority_n)
-print (values.getNumber(majority_n))
+// extract the major class by using the position of the maximum per class pixel count
+var majority_class = values.keys().get(values.values().indexOf(
+                            values.values().reduce('max')));
+                            
+// reclassify segment 
