@@ -78,10 +78,24 @@ var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 10)
 Map.addLayer(segments.randomVisualizer(), {}, 'segments');
 
 // compute the major class 
-var mode_class = segments.addBands(collection)
+var major = segments.addBands(collection)
                     .reduceConnectedComponents({
-                      'reducer': ee.Reducer.mode(), 
+                        'reducer': ee.Reducer.mode(), 
+                        'labelBand': 'segments'
+                        }
+                      ).rename('major');
+                    
+// compute the number of classes
+/*
+var nclass = segments.addBands(collection)
+                    .reduceConnectedComponents({
+                      'reducer': ee.Reducer.countDistinctNonNull(), 
                       'labelBand': 'segments'
-                    });
+                      }
+                    ).rename('nclass');
 
-Map.addLayer(mode_class, vis, 'major');
+// bind data
+var data = major.addBands(nclass);
+
+*/
+Map.addLayer(major, vis, 'major');
