@@ -33,6 +33,8 @@ var vis_sentinel = {
 
 // palletes of segment properties
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
+var vis_prop_max = { palette: ['green', 'yellow', 'orange', 'red'], min:70, max:99 };
+var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
 var vis_size = { palette: ['green', 'yellow', 'red'], min:0, max: 300};
 
 var vis_nclass = {'min': 0, 'max': 5, 'palette': ["#C8C8C8","#FED266","#FBA713","#cb701b",
@@ -145,7 +147,7 @@ years_list.forEach(function(year_i) {
                         // scale
                         10
                         );
-  
+
   // create an empty recipe to receive proportions as bands
   var proportions = ee.Image([]);
   
@@ -167,6 +169,9 @@ years_list.forEach(function(year_i) {
     proportions = proportions.addBands(class_proportion);
   });
   
+  // compute the maximum proportion 
+  proportions = proportions.addBands(proportions.reduce('max').rename('mode_prop'));
+
   // merge proportions with general stats
   stats = stats.addBands(proportions);
   
@@ -175,37 +180,13 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['size']), vis_size, 'size', false);
   Map.addLayer(stats.select(['mode']), vis, 'mode', true);
   Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
-  Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
-  Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
-  Map.addLayer(stats.select(['prop_11']), vis_prop, 'prop_11', false);
-  Map.addLayer(stats.select(['prop_12']), vis_prop, 'prop_12', false);
-  Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
-  Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
-  Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
+  //Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
+  //Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
+  //Map.addLayer(stats.select(['prop_11']), vis_prop, 'prop_11', false);
+  //Map.addLayer(stats.select(['prop_12']), vis_prop, 'prop_12', false);
+  //Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
+  //Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
+  //Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
+  Map.addLayer(stats.select(['mode_prop']), vis_prop, 'mode_prop', true);
 });
-
-
-
-
-
-
-
-
-                  
-
-
-
-  
-//var proportions = classes.map(getProportion);
-
-//print (proportions)
-                      
-//Map.addLayer(size, vis, 'total_size');
-//Map.addLayer(forest_size, vis, 'forest size');
-//Map.addLayer(class_proportion, ,
-//                                'prop');
-
-
-// bind data
-//var data = major.addBands(nclass);
 
