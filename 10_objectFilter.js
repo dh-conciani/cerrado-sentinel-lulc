@@ -1,44 +1,50 @@
-// define year
-var year = 2020;
+// generate statistical layers to be used in the object-based filtering 
+// dhemerson.costa@ipam.org.br
 
-// define classes to compute proportions
+                /////////////////////   user parameters   /////////////////////
+                
+// define input file (sentinel beta classification)
+var asset_id = 'users/dhconciani/sentinel-beta/sentinel-classification';
+var file_in = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31';
+
+// define years to be used 
+var years_list = [2020];
+
+// define classes mapped by the biome 
 var classes = [3, 4, 11, 12, 21, 25, 33];
 
-// import cerrado
+                ///////////////////// end of user parameters /////////////////////
+                
+                
+// import cerrado raster
 var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
-// read collection
-var collection = ee.Image('users/dhconciani/sentinel-beta/sentinel-classification/CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31')
-                  .select(['classification_' + year])
-                  .updateMask(cerrado.eq(4));
-                  
-// read collection 6
-var col6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1')
-            .updateMask(cerrado.eq(4));
-            
-// import sentinel 
-var mosaic = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics')
-    .filterMetadata('year', 'equals', year)
-    .filterMetadata('version', 'equals', '1')
-    .filterMetadata('biome', 'equals', 'CERRADO')
-    .mosaic()
-    .updateMask(cerrado.eq(4));
-                  
-// import mapbiomas pallete
-// import the color ramp module from mapbiomas 
-var palettes = require('users/mapbiomas/modules:Palettes.js');
-var vis = {
-    'min': 0,
-    'max': 49,
-    'palette': palettes.get('classification6')
-};
+// for each year
+years_list.forEach(function(year_i) {
+  // read sentinel beta classification  
+  var collection = ee.Image(asset_id + '/' + file_in)
+                      .select(['classification_' + year_i])
+                      .updateMask(cerrado.eq(4));
+                      
+  // read sentinel mosaic 
+  var mosaic = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics')
+      .filterMetadata('year', 'equals', year_i)
+      .filterMetadata('version', 'equals', '1')
+      .filterMetadata('biome', 'equals', 'CERRADO')
+      .mosaic()
+      .updateMask(collection);
 
-// plot sentinel mosaic
-Map.addLayer(mosaic, {
-    'bands': ['swir1_median', 'nir_median', 'red_median'],
-    'gain': [0.08, 0.07, 0.2],
-    'gamma': 0.85
-}, 'Sentinel ' + year, true);
+
+});
+
+
+
+                  
+
+            
+
+                  
+
 
 // plot mapbiomas
 Map.addLayer(collection.select(['classification_' + year]), vis, 'classification ' + year);
