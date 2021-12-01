@@ -31,6 +31,11 @@ var vis_sentinel = {
     'gamma': 0.85
 };
 
+// palletes of segment properties
+var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
+var vis_size = { palette: ['green', 'yellow', 'red'], min:0, max: 300};
+var vis_nclass = {palette: ['blue', 'purple'], min:1, max: 5 };
+
 ///////////////////////     imports    ////////////////////////
 // biomes raster  
 var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
@@ -94,7 +99,7 @@ years_list.forEach(function(year_i) {
                              ).reproject('EPSG:4326', null, 10);
                                    
   // plot on the map
-  Map.addLayer(segments.randomVisualizer(), {}, 'segments');
+  Map.addLayer(segments.randomVisualizer(), {}, 'segments', false);
 
   // define function to compute general statistics (size, mode, nclass) per segment
   var getStats = function (spatial, image, scale) {
@@ -138,28 +143,44 @@ years_list.forEach(function(year_i) {
                         10
                         );
   
-  // define function to get proportions (0-100) per segment~class 
-  var getProportion = function (class_j) {
-  // compute the per class pixel count  
-  var class_size = segments.addBands(collection.updateMask(collection.eq(class_j)))
-                            .reduceConnectedComponents({
-                              'reducer': ee.Reducer.count(), 
-                              'labelBand': 'segments'
-                              }
-                            ).reproject('EPSG:4326', null, 10);
-                          
-  // compute proportion 
-  var class_proportion = class_size.divide(stats.select(['size'])).multiply(100)
-                                    .rename('prop_' + class_j);
-                                    
-    return class_proportion;
-  };
+  // create an empty recipe to receive proportions as bands
+  var proportions = ee.Image([]);
   
-  // get proportions                    
-  var proportions = classes.map(getProportion);
-  //print (proportions);
-
+  // define function to get proportions (0-100) per segment~class 
+  classes.forEach(function(class_j) {
+    // compute the per class pixel count  
+    var class_size = segments.addBands(collection.updateMask(collection.eq(class_j)))
+                              .reduceConnectedComponents({
+                                'reducer': ee.Reducer.count(), 
+                                'labelBand': 'segments'
+                                }
+                              ).reproject('EPSG:4326', null, 10);
+                              
+    // compute proportion 
+    var class_proportion = class_size.divide(stats.select(['size'])).multiply(100)
+                                     .rename('prop_' + class_j);
+                                     
+    // insert into recipe
+    proportions = proportions.addBands(class_proportion);
+  });
+  
+  // merge proportions with general stats
+  stats = stats.addBands(proportions);
+  
+  // inspect results
+  print (stats);
+  Map.addLayer(stats.select(['size']), vis_size, 'size', false);
+  Map.addLayer(stats.select(['mode']), vis, 'mode', true);
+  Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
+  Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
+  Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
+  Map.addLayer(stats.select(['prop_11']), vis_prop, 'prop_11', false);
+  Map.addLayer(stats.select(['prop_12']), vis_prop, 'prop_12', false);
+  Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
+  Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
+  Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
 });
+
 
 
 
@@ -178,8 +199,7 @@ years_list.forEach(function(year_i) {
                       
 //Map.addLayer(size, vis, 'total_size');
 //Map.addLayer(forest_size, vis, 'forest size');
-//Map.addLayer(class_proportion, {palette: ['black', 'yellow', 'orange', 'red', 'purple'],
-//                                min:0, max: 51},
+//Map.addLayer(class_proportion, ,
 //                                'prop');
 
 
