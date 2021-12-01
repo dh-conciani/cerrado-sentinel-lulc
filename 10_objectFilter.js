@@ -1,8 +1,7 @@
 // generate statistical layers to be used in the object-based filtering 
 // dhemerson.costa@ipam.org.br
 
-                /////////////////////   user parameters   /////////////////////
-                
+/////////////////////   user parameters   /////////////////////
 // define input file (sentinel beta classification)
 var asset_id = 'users/dhconciani/sentinel-beta/sentinel-classification';
 var file_in = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31';
@@ -13,12 +12,26 @@ var years_list = [2020];
 // define classes mapped by the biome 
 var classes = [3, 4, 11, 12, 21, 25, 33];
 
-                ///////////////////// end of user parameters /////////////////////
-                
-                
-// import cerrado raster
-var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
+///////////////////////     palettes    ////////////////////////
+// mapbiomas color ramp 
+var vis = {
+    'min': 0,
+    'max': 49,
+    'palette': require('users/mapbiomas/modules:Palettes.js').get('classification6')
+};
 
+// sentinel visualization parameters 
+var vis_sentinel = {
+    'bands': ['swir1_median', 'nir_median', 'red_median'],
+    'gain': [0.08, 0.07, 0.2],
+    'gamma': 0.85
+};
+
+///////////////////////     imports    ////////////////////////
+// biomes raster  
+var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
+
+//////////////////////     functions   ///////////////////////
 // for each year
 years_list.forEach(function(year_i) {
   // read sentinel beta classification  
