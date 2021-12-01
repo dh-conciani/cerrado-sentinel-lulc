@@ -31,14 +31,14 @@ var vis = {
 };
 
 // plot sentinel mosaic
-Map.addLayer(mosaic.clip(geometry), {
+Map.addLayer(mosaic, {
     'bands': ['swir1_median', 'nir_median', 'red_median'],
     'gain': [0.08, 0.07, 0.2],
     'gamma': 0.85
 }, 'Sentinel ' + year, true);
 
 // plot mapbiomas
-Map.addLayer(collection.select(['classification_' + year]).clip(geometry), vis, 'classification ' + year);
+Map.addLayer(collection.select(['classification_' + year]), vis, 'classification ' + year);
 
 // define bands to be used in segmentation 
 var segment_bands = ["red_median", "nir_median", "swir1_median"];
@@ -71,11 +71,20 @@ var getSegments = function (image, size) {
 };
 
 // create segments
-var segments = getSegments(mosaic.select(segment_bands).clip(geometry), 10)
+var segments = getSegments(mosaic.select(segment_bands), 10)
                   .reproject('EPSG:4326', null, 10);
                   
 // inspect
 Map.addLayer(segments.randomVisualizer(), {}, 'segments');
+
+// compute the total number of pixels per segment
+var size = segments.addBands(collection)
+                      .reduceConnectedComponents({
+                        'reducer': ee.Reducer.count(),
+                        'labelBand': 'segments'
+                        }
+                      ).reproject('EPSG:4326', null, 10)
+                    .rename('segment_size');
 
 // compute the major class 
 var major = segments.addBands(collection)
@@ -83,19 +92,34 @@ var major = segments.addBands(collection)
                         'reducer': ee.Reducer.mode(), 
                         'labelBand': 'segments'
                         }
-                      ).rename('major');
-                    
-// compute the number of classes
-/*
+                      ).reproject('EPSG:4326', null, 10)
+                    .rename('major_class');
+                      
+// compute the number of classes per segment
 var nclass = segments.addBands(collection)
                     .reduceConnectedComponents({
                       'reducer': ee.Reducer.countDistinctNonNull(), 
                       'labelBand': 'segments'
                       }
-                    ).rename('nclass');
+                    ).reproject('EPSG:4326', null, 10)
+                  .rename('n_class');
+
+// per class proportion function 
+// compute the per class pixel count  
+var forest_size = segments.addBands(collection.updateMask(collection.eq(3)))
+                          .reduceConnectedComponents({
+                            'reducer': ee.Reducer.count(), 
+                            'labelBand': 'segments'
+                            }
+                          ).reproject('EPSG:4326', null, 10)
+                        .rename('size_forest');
+                          
+
+                      
+                      
+Map.addLayer(forest_size, vis, 'forest size');
+
 
 // bind data
 var data = major.addBands(nclass);
 
-*/
-Map.addLayer(major, vis, 'major');
