@@ -1,6 +1,9 @@
 // define year
 var year = 2020;
 
+// define classes to compute proportions
+var classes = [3, 4, 11, 12, 21, 25, 33];
+
 // import cerrado
 var cerrado = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
@@ -77,49 +80,76 @@ var segments = getSegments(mosaic.select(segment_bands), 10)
 // inspect
 Map.addLayer(segments.randomVisualizer(), {}, 'segments');
 
-// compute the total number of pixels per segment
-var size = segments.addBands(collection)
-                      .reduceConnectedComponents({
-                        'reducer': ee.Reducer.count(),
-                        'labelBand': 'segments'
-                        }
-                      ).reproject('EPSG:4326', null, 10)
-                    .rename('segment_size');
-
-// compute the major class 
-var major = segments.addBands(collection)
-                    .reduceConnectedComponents({
-                        'reducer': ee.Reducer.mode(), 
-                        'labelBand': 'segments'
-                        }
-                      ).reproject('EPSG:4326', null, 10)
-                    .rename('major_class');
+// define function to compute general statistics (size, mode, nclass) per segment
+var getStats = function (spatial, image, scale) {
+  // compute the total number of pixels 
+  var size = spatial.addBands(image)
+                        .reduceConnectedComponents({
+                          'reducer': ee.Reducer.count(),
+                          'labelBand': 'segments'
+                          }
+                        ).reproject('EPSG:4326', null, scale)
+                      .rename('segment_size');
                       
-// compute the number of classes per segment
-var nclass = segments.addBands(collection)
-                    .reduceConnectedComponents({
-                      'reducer': ee.Reducer.countDistinctNonNull(), 
-                      'labelBand': 'segments'
-                      }
-                    ).reproject('EPSG:4326', null, 10)
-                  .rename('n_class');
-
-// per class proportion function 
-// compute the per class pixel count  
-var forest_size = segments.addBands(collection.updateMask(collection.eq(3)))
+  // compute the mode class 
+  var mode = spatial.addBands(image)
+                        .reduceConnectedComponents({
+                          'reducer': ee.Reducer.mode(), 
+                          'labelBand': 'segments'
+                          }
+                        ).reproject('EPSG:4326', null, scale)
+                      .rename('mode_class');
+                      
+  // compute the number of classes 
+  var nclass = spatial.addBands(image)
                           .reduceConnectedComponents({
-                            'reducer': ee.Reducer.count(), 
+                            'reducer': ee.Reducer.countDistinctNonNull(), 
                             'labelBand': 'segments'
                             }
-                          ).reproject('EPSG:4326', null, 10)
-                        .rename('size_forest');
-                          
+                          ).reproject('EPSG:4326', null, scale)
+                        .rename('n_class');
+                        
+  return size.addBands(mode).addBands(nclass);
+};
 
+// compute general stats
+var stats = getStats(segments, collection, 10);
+
+
+
+
+
+                  
+
+
+// per class proportion function 
+var getProportion = function (class_k) {
+  // compute the per class pixel count  
+  var class_size = segments.addBands(collection.updateMask(collection.eq(class_k)))
+                            .reduceConnectedComponents({
+                              'reducer': ee.Reducer.count(), 
+                              'labelBand': 'segments'
+                              }
+                            ).reproject('EPSG:4326', null, 10);
+                          
+  // compute proportion 
+  var class_proportion = class_size.divide(size).multiply(100)
+                                    .rename('prop_' + class_k);
+                                    
+    return class_proportion;
+  };
+  
+//var proportions = classes.map(getProportion);
+
+//print (proportions)
                       
-                      
-Map.addLayer(forest_size, vis, 'forest size');
+//Map.addLayer(size, vis, 'total_size');
+//Map.addLayer(forest_size, vis, 'forest size');
+//Map.addLayer(class_proportion, {palette: ['black', 'yellow', 'orange', 'red', 'purple'],
+//                                min:0, max: 51},
+//                                'prop');
 
 
 // bind data
-var data = major.addBands(nclass);
+//var data = major.addBands(nclass);
 
