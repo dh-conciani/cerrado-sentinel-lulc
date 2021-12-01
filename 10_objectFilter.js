@@ -33,7 +33,9 @@ var vis_sentinel = {
 
 // palletes of segment properties
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
-var vis_prop_max = { palette: ['green', 'yellow', 'orange', 'red'], min:70, max:99 };
+var vis_prop_max = { palette: ['green', 'yellow', 'orange', 'red'], min:49, max:99 };
+var vis_prop_res = { palette: ['green', 'yellow', 'orange', 'red'], min:1, max:51 };
+
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
 var vis_size = { palette: ['green', 'yellow', 'red'], min:0, max: 300};
 
@@ -169,8 +171,11 @@ years_list.forEach(function(year_i) {
     proportions = proportions.addBands(class_proportion);
   });
   
-  // compute the maximum proportion 
-  proportions = proportions.addBands(proportions.reduce('max').rename('mode_prop'));
+  // compute descriptive proportions 
+    // maximum proportion value (mode)
+    proportions = proportions.addBands(proportions.reduce('max').rename('max_prop'))
+                            // residual proportion (max - 100)
+                           .addBands(proportions.reduce('max').subtract(100).multiply(-1).rename('res_prop'));
 
   // merge proportions with general stats
   stats = stats.addBands(proportions);
@@ -187,6 +192,7 @@ years_list.forEach(function(year_i) {
   //Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
   //Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
   //Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
-  Map.addLayer(stats.select(['mode_prop']), vis_prop, 'mode_prop', true);
+  Map.addLayer(stats.select(['max_prop']), vis_prop_max, 'max_prop', false);
+  Map.addLayer(stats.select(['res_prop']), vis_prop_res, 'res_prop', true);
 });
 
