@@ -12,6 +12,10 @@ var years_list = [2020];
 // define classes mapped by the biome 
 var classes = [3, 4, 11, 12, 21, 25, 33];
 
+// define segment properties 
+var segment_bands = ["red_median", "nir_median", "swir1_median"];
+var segment_size = 10;
+
 ///////////////////////     palettes    ////////////////////////
 // mapbiomas color ramp 
 var vis = {
@@ -37,8 +41,8 @@ years_list.forEach(function(year_i) {
   // read sentinel beta classification  
   var collection = ee.Image(asset_id + '/' + file_in)
                       .select(['classification_' + year_i])
-                      .updateMask(cerrado.eq(4));
-                      
+                      .updateMask(biomes.eq(4));
+                       
   // read sentinel mosaic 
   var mosaic = ee.ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics')
       .filterMetadata('year', 'equals', year_i)
@@ -46,35 +50,23 @@ years_list.forEach(function(year_i) {
       .filterMetadata('biome', 'equals', 'CERRADO')
       .mosaic()
       .updateMask(collection);
-
-
-});
-
-
-
-                  
-
-            
-
-                  
-
-
-// plot mapbiomas
-Map.addLayer(collection.select(['classification_' + year]), vis, 'classification ' + year);
-
-// define bands to be used in segmentation 
-var segment_bands = ["red_median", "nir_median", "swir1_median"];
-
-// define function to compute segments
-var getSegments = function (image, size) {
-  // define seed
+      
+  // plot on the map 
+  Map.addLayer(mosaic, vis_sentinel, 'mosaic ' + year_i);
+  // plot on the map 
+  Map.addLayer(collection, vis, 'classification ' + year_i);
+      
+  // define function to compute segments
+  var getSegments = function (image, size) {
+    // define seed
     var seeds = ee.Algorithms.Image.Segmentation.seedGrid(
         {
             size: size,
             gridType: 'square'
         }
     );
-  // create segments by using SNIC
+    
+    // create segments by using SNIC
     var snic = ee.Algorithms.Image.Segmentation.SNIC({
         image: image,
         size: size,
@@ -83,24 +75,29 @@ var getSegments = function (image, size) {
         neighborhoodSize: 2 * size,
         seeds: seeds
     });
-  // paste proerties
+    
+    // paste proerties
     snic = ee.Image(
         snic.copyProperties(image)
             .copyProperties(image, ['system:footprint'])
             .copyProperties(image, ['system:time_start']));
 
     return snic.select(['clusters'], ['segments']);
-};
+    };
+    
+  // create segments
+  var segments = getSegments(
+                             // image:
+                             mosaic.select(segment_bands), 
+                             // size:
+                             segment_size
+                             ).reproject('EPSG:4326', null, 10);
+                                   
+  // plot on the map
+  Map.addLayer(segments.randomVisualizer(), {}, 'segments');
 
-// create segments
-var segments = getSegments(mosaic.select(segment_bands), 10)
-                  .reproject('EPSG:4326', null, 10);
-                  
-// inspect
-Map.addLayer(segments.randomVisualizer(), {}, 'segments');
-
-// define function to compute general statistics (size, mode, nclass) per segment
-var getStats = function (spatial, image, scale) {
+  // define function to compute general statistics (size, mode, nclass) per segment
+  var getStats = function (spatial, image, scale) {
   // compute the total number of pixels 
   var size = spatial.addBands(image)
                         .reduceConnectedComponents({
@@ -108,7 +105,7 @@ var getStats = function (spatial, image, scale) {
                           'labelBand': 'segments'
                           }
                         ).reproject('EPSG:4326', null, scale)
-                      .rename('segment_size');
+                      .rename('size');
                       
   // compute the mode class 
   var mode = spatial.addBands(image)
@@ -117,7 +114,7 @@ var getStats = function (spatial, image, scale) {
                           'labelBand': 'segments'
                           }
                         ).reproject('EPSG:4326', null, scale)
-                      .rename('mode_class');
+                      .rename('mode');
                       
   // compute the number of classes 
   var nclass = spatial.addBands(image)
@@ -128,11 +125,43 @@ var getStats = function (spatial, image, scale) {
                           ).reproject('EPSG:4326', null, scale)
                         .rename('n_class');
                         
-  return size.addBands(mode).addBands(nclass);
+  return spatial.addBands(size).addBands(mode).addBands(nclass);
 };
 
-// compute general stats
-var stats = getStats(segments, collection, 10);
+  // compute general stats
+  var stats = getStats(
+                        // spatial:
+                        segments, 
+                        // image:
+                        collection,
+                        // scale
+                        10
+                        );
+  
+  // define function to get proportions (0-100) per segment~class 
+  var getProportion = function (class_j) {
+  // compute the per class pixel count  
+  var class_size = segments.addBands(collection.updateMask(collection.eq(class_j)))
+                            .reduceConnectedComponents({
+                              'reducer': ee.Reducer.count(), 
+                              'labelBand': 'segments'
+                              }
+                            ).reproject('EPSG:4326', null, 10);
+                          
+  // compute proportion 
+  var class_proportion = class_size.divide(stats.select(['size'])).multiply(100)
+                                    .rename('prop_' + class_j);
+                                    
+    return class_proportion;
+  };
+  
+  // get proportions                    
+  var proportions = classes.map(getProportion);
+  //print (proportions);
+
+});
+
+
 
 
 
@@ -141,22 +170,7 @@ var stats = getStats(segments, collection, 10);
                   
 
 
-// per class proportion function 
-var getProportion = function (class_k) {
-  // compute the per class pixel count  
-  var class_size = segments.addBands(collection.updateMask(collection.eq(class_k)))
-                            .reduceConnectedComponents({
-                              'reducer': ee.Reducer.count(), 
-                              'labelBand': 'segments'
-                              }
-                            ).reproject('EPSG:4326', null, 10);
-                          
-  // compute proportion 
-  var class_proportion = class_size.divide(size).multiply(100)
-                                    .rename('prop_' + class_k);
-                                    
-    return class_proportion;
-  };
+
   
 //var proportions = classes.map(getProportion);
 
