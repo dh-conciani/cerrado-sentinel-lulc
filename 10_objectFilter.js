@@ -34,7 +34,10 @@ var vis_sentinel = {
 // palletes of segment properties
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
 var vis_size = { palette: ['green', 'yellow', 'red'], min:0, max: 300};
-var vis_nclass = {palette: ['blue', 'purple'], min:1, max: 5 };
+
+var vis_nclass = {'min': 0, 'max': 5, 'palette': ["#C8C8C8","#FED266","#FBA713","#cb701b",
+                                                     "#cb701b","#a95512","#a95512","#662000",
+                                                     "#662000", "#cb181d"],'format': 'png'};
 
 ///////////////////////     imports    ////////////////////////
 // biomes raster  
