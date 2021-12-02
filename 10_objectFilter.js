@@ -164,7 +164,7 @@ years_list.forEach(function(year_i) {
   
   // define function to get proportions (0-100) per segment~class 
   classes.forEach(function(class_j) {
-    // compute the per class pixel count  
+    // compute the per class pixel count
     var class_size = segments.addBands(collection.updateMask(collection.eq(class_j)))
                               .reduceConnectedComponents({
                                 'reducer': ee.Reducer.count(), 
@@ -182,10 +182,38 @@ years_list.forEach(function(year_i) {
   
   // compute descriptive proportions 
     // maximum proportion value (mode)
-    proportions = proportions.addBands(proportions.reduce('max').rename('max_prop'))
+    proportions = proportions.addBands(proportions.reduce('max').rename('mode_prop'))
                             // residual proportion (max - 100)
-                           .addBands(proportions.reduce('max').subtract(100).multiply(-1).rename('res_prop'));
-    
+                           .addBands(proportions.reduce('max').subtract(100).multiply(-1).rename('residual_prop'));
+  
+  // create an empty recipe to receive proportions as bands
+  var proportions_second = ee.Image([]);
+  
+  // define function to get the second mode proportion 
+  classes.forEach(function(class_j) {
+
+    // remove pixels from the mode
+    var masked = collection.updateMask(collection.eq(class_j));
+                 masked = masked.updateMask(collection.neq(stats.select(['mode'])));
+
+    // compute the per class pixel count
+    var class_size = segments.addBands(masked)
+                              .reduceConnectedComponents({
+                                'reducer': ee.Reducer.count(), 
+                                'labelBand': 'segments'
+                                }
+                              ).reproject('EPSG:4326', null, 10);
+                              
+    // compute proportion 
+    var class_proportion = class_size.divide(stats.select(['size'])).multiply(100)
+                                     .rename('prop_' + class_j);
+                                     
+    // insert into recipe
+    proportions_second = proportions_second.addBands(class_proportion);
+  });
+  
+  print (proportions_second)    
+
   // merge proportions with general stats
   stats = stats.addBands(proportions);
   
@@ -202,6 +230,6 @@ years_list.forEach(function(year_i) {
   //Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
   //Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
   //Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
-  Map.addLayer(stats.select(['max_prop']), vis_prop_max, 'max_prop', false);
-  Map.addLayer(stats.select(['res_prop']), vis_prop_res, 'res_prop', true);
+  Map.addLayer(stats.select(['max_prop']), vis_prop_max, 'mode_prop', false);
+  Map.addLayer(stats.select(['res_prop']), vis_prop_res, 'residual_prop', true);
 });
