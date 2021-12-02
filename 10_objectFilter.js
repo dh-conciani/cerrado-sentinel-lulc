@@ -34,7 +34,10 @@ var vis_sentinel = {
 // palletes of segment properties
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
 var vis_prop_max = { palette: ['green', 'yellow', 'orange', 'red'], min:49, max:99 };
+var vis_prop_max2 = { palette: ['green', 'yellow', 'orange', 'red'], min:1, max:40 };
+
 var vis_prop_res = { palette: ['green', 'yellow', 'orange', 'red'], min:1, max:51 };
+var vis_ratio = { palette: ['black', 'yellow', 'orange', 'red'], min:0.1, max: 0.9 };
 
 var vis_prop = { palette: ['black', 'yellow', 'orange', 'red'], min:0, max: 70 };
 var vis_size = { palette: ['green', 'yellow', 'red'], min:0, max: 300};
@@ -212,16 +215,21 @@ years_list.forEach(function(year_i) {
     proportions_second = proportions_second.addBands(class_proportion);
   });
   
-  print (proportions_second)    
+   // proportion value (second mode)
+    proportions_second = proportions_second.reduce('max').rename('second_mode_prop');
 
   // merge proportions with general stats
-  stats = stats.addBands(proportions);
+  stats = stats.addBands(proportions).addBands(proportions_second);
+  
+  // compute the ration (second mode size / mode size)
+  var ratio = stats.select(['second_mode_prop']).divide(stats.select(['mode_prop'])).rename('ratio');
+      stats = stats.addBands(ratio);
   
   // inspect results
   print (stats);
   Map.addLayer(stats.select(['size']), vis_size, 'size', false);
   Map.addLayer(stats.select(['mode']), vis, 'mode', true);
-  Map.addLayer(stats.select(['second_mode']), vis, 'second_mode', true);
+  Map.addLayer(stats.select(['second_mode']), vis, 'second_mode', false);
   Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
   //Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
   //Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
@@ -230,6 +238,9 @@ years_list.forEach(function(year_i) {
   //Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
   //Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
   //Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
-  Map.addLayer(stats.select(['max_prop']), vis_prop_max, 'mode_prop', false);
-  Map.addLayer(stats.select(['res_prop']), vis_prop_res, 'residual_prop', true);
+  Map.addLayer(stats.select(['mode_prop']), vis_prop_max, 'mode_prop', false);
+  //Map.addLayer(stats.select(['residual_prop']), vis_prop_res, 'residual_prop', false);
+  Map.addLayer(stats.select(['second_mode_prop']), vis_prop_max2, 'second_mode_prop', false);
+  Map.addLayer(stats.select(['ratio']), vis_ratio, 'ratio', false);
+
 });
