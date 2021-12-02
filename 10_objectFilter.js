@@ -128,6 +128,15 @@ years_list.forEach(function(year_i) {
                         ).reproject('EPSG:4326', null, scale)
                       .rename('mode');
                       
+  // compute the second mode
+  var second_mode = spatial.addBands(image.updateMask(image.neq(mode)))
+                        .reduceConnectedComponents({
+                          'reducer': ee.Reducer.mode(), 
+                          'labelBand': 'segments'
+                          }
+                        ).reproject('EPSG:4326', null, scale)
+                      .rename('second_mode');
+                      
   // compute the number of classes 
   var nclass = spatial.addBands(image)
                           .reduceConnectedComponents({
@@ -136,8 +145,8 @@ years_list.forEach(function(year_i) {
                             }
                           ).reproject('EPSG:4326', null, scale)
                         .rename('n_class');
-                        
-  return spatial.addBands(size).addBands(mode).addBands(nclass);
+
+  return spatial.addBands(size).addBands(mode).addBands(second_mode).addBands(nclass);
 };
 
   // compute general stats
@@ -176,7 +185,7 @@ years_list.forEach(function(year_i) {
     proportions = proportions.addBands(proportions.reduce('max').rename('max_prop'))
                             // residual proportion (max - 100)
                            .addBands(proportions.reduce('max').subtract(100).multiply(-1).rename('res_prop'));
-
+    
   // merge proportions with general stats
   stats = stats.addBands(proportions);
   
@@ -184,6 +193,7 @@ years_list.forEach(function(year_i) {
   print (stats);
   Map.addLayer(stats.select(['size']), vis_size, 'size', false);
   Map.addLayer(stats.select(['mode']), vis, 'mode', true);
+  Map.addLayer(stats.select(['second_mode']), vis, 'second_mode', true);
   Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
   //Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
   //Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
@@ -195,4 +205,3 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['max_prop']), vis_prop_max, 'max_prop', false);
   Map.addLayer(stats.select(['res_prop']), vis_prop_res, 'res_prop', true);
 });
-
