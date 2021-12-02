@@ -253,17 +253,36 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['residual_prop_l2']), vis_prop_res, 'residual_prop_l2', false);
   
   // define function 
-  var getCount = function(region_i) {
+  /*
+  var getCount = function(feature) {
     // perform reduce
-    var contagem = input.reduceRegion({
-                        reducer: ee.Reducer.frequencyHistogram(),
-                        geometry : feature.geometry(), 
-                        scale: 10,
-                        maxPixels: 1e13
-                        }
+    var count = stats.select(['ratio']).reduceRegion({
+                            reducer: ee.Reducer.median(),
+                            geometry : feature.geometry(), 
+                            scale: 10,
+                            maxPixels: 1e13
+                            }
                       );
-                  
-
-  };
+                    return feature.set(count);
+                };
+    
+    // get count 
+    var ratio_count = regions.map(getCount);
+    print (ratio_count.first());
+    */
+    
+    // export final asset
+    // explort to workspace asset
+    Export.image.toAsset({
+        "image": stats,
+        "description": 'stats_v31',
+        "assetId": 'users/dh-conciani/test-sentinel' + '/' + 'stats_v31',
+        "scale": 10,
+        "pyramidingPolicy": {
+            '.default': 'mode'
+        },
+        "maxPixels": 1e13,
+        "region": biomes.updateMask(biomes.eq(4)).geometry()
+    });  
 
 });
