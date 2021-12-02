@@ -50,6 +50,10 @@ var vis_nclass = {'min': 0, 'max': 5, 'palette': ["#C8C8C8","#FED266","#FBA713",
 // biomes raster  
 var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
+// classification regions
+var regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6')
+              .limit(3);//.aside(print);
+
 //////////////////////     functions   ///////////////////////
 // for each year
 years_list.forEach(function(year_i) {
@@ -221,9 +225,13 @@ years_list.forEach(function(year_i) {
   // merge proportions with general stats
   stats = stats.addBands(proportions).addBands(proportions_second);
   
-  // compute the ration (second mode size / mode size)
+  // compute the ratio (second mode size / mode size)
   var ratio = stats.select(['second_mode_prop']).divide(stats.select(['mode_prop'])).rename('ratio');
       stats = stats.addBands(ratio);
+      
+  // compute the level-2 residual
+  var residual_prop_l2 = stats.select(['residual_prop']).subtract(stats.select(['second_mode_prop']));
+      stats = stats.addBands(residual_prop_l2.rename('residual_prop_l2'));
   
   // inspect results
   print (stats);
@@ -242,5 +250,20 @@ years_list.forEach(function(year_i) {
   //Map.addLayer(stats.select(['residual_prop']), vis_prop_res, 'residual_prop', false);
   //Map.addLayer(stats.select(['second_mode_prop']), vis_prop_max2, 'second_mode_prop', false);
   Map.addLayer(stats.select(['ratio']), vis_ratio, 'ratio', false);
+  Map.addLayer(stats.select(['residual_prop_l2']), vis_prop_res, 'residual_prop_l2', false);
+  
+  // define function 
+  var getCount = function(region_i) {
+    // perform reduce
+    var contagem = input.reduceRegion({
+                        reducer: ee.Reducer.frequencyHistogram(),
+                        geometry : feature.geometry(), 
+                        scale: 10,
+                        maxPixels: 1e13
+                        }
+                      );
+                  
+
+  };
 
 });
