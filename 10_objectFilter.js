@@ -230,7 +230,7 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['size']), vis_size, 'size', false);
   Map.addLayer(stats.select(['mode']), vis, 'mode', true);
   Map.addLayer(stats.select(['second_mode']), vis, 'second_mode', false);
-  Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
+  //Map.addLayer(stats.select(['n_class']), vis_nclass, 'n_class', false);
   //Map.addLayer(stats.select(['prop_3']), vis_prop, 'prop_3', false);
   //Map.addLayer(stats.select(['prop_4']), vis_prop, 'prop_4', false);
   //Map.addLayer(stats.select(['prop_11']), vis_prop, 'prop_11', false);
@@ -238,9 +238,9 @@ years_list.forEach(function(year_i) {
   //Map.addLayer(stats.select(['prop_21']), vis_prop, 'prop_21', false);
   //Map.addLayer(stats.select(['prop_25']), vis_prop, 'prop_25', false);
   //Map.addLayer(stats.select(['prop_33']), vis_prop, 'prop_33',false);
-  Map.addLayer(stats.select(['mode_prop']), vis_prop_max, 'mode_prop', false);
+  //Map.addLayer(stats.select(['mode_prop']), vis_prop_max, 'mode_prop', false);
   //Map.addLayer(stats.select(['residual_prop']), vis_prop_res, 'residual_prop', false);
-  Map.addLayer(stats.select(['second_mode_prop']), vis_prop_max2, 'second_mode_prop', false);
+  //Map.addLayer(stats.select(['second_mode_prop']), vis_prop_max2, 'second_mode_prop', false);
   Map.addLayer(stats.select(['ratio']), vis_ratio, 'ratio', false);
 
 });
