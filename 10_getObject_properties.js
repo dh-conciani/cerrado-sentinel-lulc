@@ -51,8 +51,11 @@ var vis_nclass = {'min': 0, 'max': 5, 'palette': ["#C8C8C8","#FED266","#FBA713",
 var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
 
 // classification regions
-var regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6')
-              .limit(2);//.aside(print);
+var regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
+              //.limit(3);//.aside(print);
+              
+// classification regions (image)
+var regions_img = ee.Image('users/dhconciani/base/cerrado_regioes_c6_raster');
 
 //////////////////////     functions   ///////////////////////
 // for each year
@@ -255,37 +258,79 @@ years_list.forEach(function(year_i) {
   // round residual prop level-2 to as statistical-stratifier
   //stats = stats.addBands(stats.select(['residual_prop_l2']).round().rename('rounded_residual_l2'));
    
-  // define function to get samples
-  var getSamples = function(feature) {
+  // define function to get sample points (for statistical analisys)
+  var getPoints = function(feature) {
+    var memory_points = ee.FeatureCollection.randomPoints({
+                    region: feature.geometry(),
+                    points: 2,
+                    seed: 2000 * 2
+              }
+          );
+          return memory_points;
+      };
+      
+      // apply function to get points
+      var points = regions.map(getPoints).flatten();
+      
+    // define function to extract pixel values for each point
+    var extractValues = function (object) {
+        return  stats.addBands(regions_img.rename('region')).sample({
+                region: object.geometry(),
+                scale: 10,
+                geometries: false
+                }
+            );  
+        };
+              
+    // extract values
+    var sampled = points.map(extractValues).flatten();
+    print (sampled.limit(10));
+    print (sampled.size());
+
+  
+  /*
+  
+  var samples = regions.map(function(feature) {
     // sort n points per region
     var points = ee.FeatureCollection.randomPoints({
                     region: feature.geometry(),
-                    points: 2000,
+                    points: 2,
                     seed: 2000 * 2
         }
       );
    
-    // sample stats
-    var sampled = stats.sample({
-        region: points,
-        geometries: false,
-        scale: 10
-        }
-      );
+      // define function to extract pixel values for each point
+      var extractValues = function (memory_feature) {
+          return memory_feature.set(stats.reduceRegion({
+                                          reducer: 'mean',
+                                          geometry: memory_feature.geometry(),
+                                          scale: 10
+                    }
+                )
+            );
+        };
       
-      return sampled;
-  };
+      // get values
+      return points.map(extractValues);
+          }
+      );
+    
+
+  print (samples);
   
-  // apply function to get samples
-  var samples = regions.map(getSamples).flatten();
+  */
   
-  // export 
+  
+  
+  /* export 
   Export.table.toDrive({
     collection: samples,
     description: 'samples_object',
     folder: 'EXPORT',
     fileFormat: 'CSV'
   });
+  
+  */
 
 
   
