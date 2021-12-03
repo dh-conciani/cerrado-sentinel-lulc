@@ -215,7 +215,7 @@ years_list.forEach(function(year_i) {
     var class_proportion = class_size.divide(stats.select(['size'])).multiply(100)
                                      .rename('prop_' + class_j);
                                      
-    // insert into recipe
+    // insert into recipere
     proportions_second = proportions_second.addBands(class_proportion);
   });
   
@@ -252,6 +252,38 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['ratio']), vis_ratio, 'ratio', false);
   Map.addLayer(stats.select(['residual_prop_l2']), vis_prop_res, 'residual_prop_l2', false);
   
+  // round residual prop level-2 to as statistical-stratifier
+  stats = stats.addBands(stats.select(['residual_prop_l2']).round().rename('rounded_residual_l2'));
+   
+  // define function to get samples
+  var getSamples = function(feature) {
+    // sort n points per region
+    var points = ee.FeatureCollection.randomPoints({
+                    region: feature.geometry(),
+                    points: 2000,
+                    seed: 2000 * 2
+        }
+      );
+    
+    // sample stats
+    var sampled = stats.sample({
+        region: geometry,
+        geometries: false,
+        scale: 10
+        }
+      );
+  };
+  
+
+  Map.addLayer(points)
+  
+  
+
+  
+  
+
+
+  
   // define function 
   /*
   var getCount = function(feature) {
@@ -272,7 +304,7 @@ years_list.forEach(function(year_i) {
     */
     
     // export final asset
-    // explort to workspace asset
+    /*
     Export.image.toAsset({
         "image": stats,
         "description": 'stats_v31',
@@ -284,5 +316,6 @@ years_list.forEach(function(year_i) {
         "maxPixels": 1e13,
         "region": biomes.updateMask(biomes.eq(4)).geometry()
     });  
+    */
 
 });
