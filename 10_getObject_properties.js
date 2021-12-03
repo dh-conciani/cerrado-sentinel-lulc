@@ -262,8 +262,8 @@ years_list.forEach(function(year_i) {
   var getPoints = function(feature) {
     var memory_points = ee.FeatureCollection.randomPoints({
                     region: feature.geometry(),
-                    points: 2,
-                    seed: 2000 * 2
+                    points: 3000,
+                    seed: 13000 * 2
               }
           );
           return memory_points;
@@ -274,20 +274,29 @@ years_list.forEach(function(year_i) {
       
     // define function to extract pixel values for each point
     var extractValues = function (object) {
-        return  stats.addBands(regions_img.rename('region')).sample({
-                region: object.geometry(),
-                scale: 10,
-                geometries: false
+        return  object.set(stats.addBands(regions_img.rename('region')).reduceRegion({
+                reducer: 'mean',
+                geometry: object.geometry(),
+                scale: 10
                 }
-            );  
+            )
+          ).setGeometry(null);  
         };
               
     // extract values
-    var sampled = points.map(extractValues).flatten();
-    print (sampled.limit(10));
-    print (sampled.size());
-
+    var sampled = points.map(extractValues);
+    print (sampled.limit(3));
+    
+      
+  // export 
+    Export.table.toDrive({
+      collection: sampled,
+      description: 'sample_objects_3000',
+      folder: 'EXPORT',
+      fileFormat: 'CSV'
+    });
   
+    
   /*
   
   var samples = regions.map(function(feature) {
@@ -321,16 +330,7 @@ years_list.forEach(function(year_i) {
   */
   
   
-  
-  /* export 
-  Export.table.toDrive({
-    collection: samples,
-    description: 'samples_object',
-    folder: 'EXPORT',
-    fileFormat: 'CSV'
-  });
-  
-  */
+
 
 
   
