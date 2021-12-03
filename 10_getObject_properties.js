@@ -52,7 +52,7 @@ var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster'
 
 // classification regions
 var regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6')
-              .limit(3);//.aside(print);
+              .limit(2);//.aside(print);
 
 //////////////////////     functions   ///////////////////////
 // for each year
@@ -253,7 +253,7 @@ years_list.forEach(function(year_i) {
   Map.addLayer(stats.select(['residual_prop_l2']), vis_prop_res, 'residual_prop_l2', false);
   
   // round residual prop level-2 to as statistical-stratifier
-  stats = stats.addBands(stats.select(['residual_prop_l2']).round().rename('rounded_residual_l2'));
+  //stats = stats.addBands(stats.select(['residual_prop_l2']).round().rename('rounded_residual_l2'));
    
   // define function to get samples
   var getSamples = function(feature) {
@@ -264,23 +264,28 @@ years_list.forEach(function(year_i) {
                     seed: 2000 * 2
         }
       );
-    
+   
     // sample stats
     var sampled = stats.sample({
-        region: geometry,
+        region: points,
         geometries: false,
         scale: 10
         }
       );
+      
+      return sampled;
   };
   
-
-  Map.addLayer(points)
+  // apply function to get samples
+  var samples = regions.map(getSamples).flatten();
   
-  
-
-  
-  
+  // export 
+  Export.table.toDrive({
+    collection: samples,
+    description: 'samples_object',
+    folder: 'EXPORT',
+    fileFormat: 'CSV'
+  });
 
 
   
@@ -304,11 +309,11 @@ years_list.forEach(function(year_i) {
     */
     
     // export final asset
-    /*
+    
     Export.image.toAsset({
-        "image": stats,
-        "description": 'stats_v31',
-        "assetId": 'users/dh-conciani/test-sentinel' + '/' + 'stats_v31',
+        "image": stats.select(['mode']).rename('classification_2020'),
+        "description": 'mode_2020_v31',
+        "assetId": 'users/dh-conciani/test-sentinel' + '/' + 'mode_2020_v31',
         "scale": 10,
         "pyramidingPolicy": {
             '.default': 'mode'
@@ -316,6 +321,6 @@ years_list.forEach(function(year_i) {
         "maxPixels": 1e13,
         "region": biomes.updateMask(biomes.eq(4)).geometry()
     });  
-    */
+    
 
 });
