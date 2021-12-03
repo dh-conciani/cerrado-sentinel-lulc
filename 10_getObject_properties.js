@@ -156,7 +156,7 @@ years_list.forEach(function(year_i) {
                           ).reproject('EPSG:4326', null, scale)
                         .rename('n_class');
 
-  return spatial.addBands(size).addBands(mode).addBands(second_mode).addBands(nclass);
+  return size.addBands(mode).addBands(second_mode).addBands(nclass);
 };
 
   // compute general stats
@@ -262,8 +262,8 @@ years_list.forEach(function(year_i) {
   var getPoints = function(feature) {
     var memory_points = ee.FeatureCollection.randomPoints({
                     region: feature.geometry(),
-                    points: 3000,
-                    seed: 13000 * 2
+                    points: 1000,
+                    seed: 1000 * 2
               }
           );
           return memory_points;
@@ -271,7 +271,7 @@ years_list.forEach(function(year_i) {
       
       // apply function to get points
       var points = regions.map(getPoints).flatten();
-      
+    
     // define function to extract pixel values for each point
     var extractValues = function (object) {
         return  object.set(stats.addBands(regions_img.rename('region')).reduceRegion({
@@ -285,13 +285,14 @@ years_list.forEach(function(year_i) {
               
     // extract values
     var sampled = points.map(extractValues);
-    print (sampled.limit(3));
+    print (sampled.limit(100));
+    print (sampled.size());
     
       
   // export 
     Export.table.toDrive({
-      collection: sampled,
-      description: 'sample_objects_3000',
+      collection: ee.FeatureCollection(sampled),
+      description: 'sample_objects_1000',
       folder: 'EXPORT',
       fileFormat: 'CSV'
     });
