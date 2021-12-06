@@ -1,4 +1,4 @@
-// compute area by class considering cerrado mapbiomas collection 6 
+// compute area
 // dhemerson.costa@ipam.org.br
 
 // import ibges biome
@@ -10,16 +10,13 @@ var pixelArea = ee.Image.pixelArea().divide(10000);
 // define resoltion 
 var resolution = 10;
 
-// define input file (collection 6)
-//var file_path = 'projects/mapbiomas-workspace/public/collection6/';
-//var file_name = 'mapbiomas_collection60_integration_v1';
-
 // define input file (sentinel)
-var file_path = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO/SENTINEL/classification_sentinel/';
-var file_name = 'CERRADO_sentinel_pseudo_v2';
+var file_path = 'users/dhconciani/sentinel-beta/sentinel-classification/';
+var file_name = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31';
+
 
 // define output file
-var dir_out = 'SENTINEL-AREA';
+var dir_out = 'EXPORT';
 var export_name = file_name;
 
 // define cerrado regions asset
@@ -61,8 +58,6 @@ anos.forEach(function(process_year) {
     var area04 = pixelArea.mask(img_clip.eq(4));
     var area11 = pixelArea.mask(img_clip.eq(11));
     var area12 = pixelArea.mask(img_clip.eq(12));
-    var area15 = pixelArea.mask(img_clip.eq(15));
-    var area19 = pixelArea.mask(img_clip.eq(19));
     var area21 = pixelArea.mask(img_clip.eq(21));
     var area25 = pixelArea.mask(img_clip.eq(25));
     var area33 = pixelArea.mask(img_clip.eq(33));
@@ -82,14 +77,6 @@ anos.forEach(function(process_year) {
               scale: resolution,
               maxPixels: 1e13}).get('area')))
           .set('grassland', ee.Number(area12.reduceRegion({reducer: ee.Reducer.sum(),
-              geometry: pol_reg.geometry(),
-              scale: resolution,
-              maxPixels: 1e13}).get('area')))
-          .set('pasture', ee.Number(area15.reduceRegion({reducer: ee.Reducer.sum(),
-              geometry: pol_reg.geometry(),
-              scale: resolution,
-              maxPixels: 1e13}).get('area')))
-          .set('agriculture', ee.Number(area19.reduceRegion({reducer: ee.Reducer.sum(),
               geometry: pol_reg.geometry(),
               scale: resolution,
               maxPixels: 1e13}).get('area')))
@@ -113,23 +100,18 @@ anos.forEach(function(process_year) {
   });
 });
 
-print ('before', recipe);
 
 // empty .geo column
 recipe.map(function(feature){
-return feature.set('geo', '');
+return feature.setGeometry(null);
 });
 
-// plot diagnosys
-print ('recipe.first()',recipe.first());
-print ('recipe.size()',recipe.size());
-print ('recipe',recipe);
 //Map.addLayer(recipe,{},'recipe');
 
 // exporto to gDrive
 Export.table.toDrive({
   collection: recipe,
-  description: export_name,
+  description: 'area_' + export_name,
   folder: dir_out,
   fileFormat: 'CSV'
 });
