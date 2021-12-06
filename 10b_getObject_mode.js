@@ -15,7 +15,7 @@ var asset_id = 'users/dhconciani/sentinel-beta/sentinel-classification';
 var file_in = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31';
 
 // define years to be used 
-var years_list = [2016, 2017, 2018, 2019, 2020];
+var years_list = [2020];
 
 // define classes mapped by the biome 
 var classes = [3, 4, 11, 12, 21, 25, 33];
@@ -65,6 +65,9 @@ var regions = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRAD
 // classification regions (image)
 var regions_img = ee.Image('users/dhconciani/base/cerrado_regioes_c6_raster');
 
+// collection 6.0 
+var col6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1');
+
 // define empty recipe
 var recipe = ee.Image([]);
 
@@ -84,10 +87,16 @@ years_list.forEach(function(year_i) {
       .mosaic()
       .updateMask(collection);
       
+  // read collection 6.0
+  var col6_i = col6.select(['classification_' + year_i])
+                   .updateMask(collection);
+  
   // plot on the map 
   Map.addLayer(mosaic, vis_sentinel, 'mosaic ' + year_i);
   // plot on the map 
   Map.addLayer(collection, vis, 'classification ' + year_i);
+  // plot on the mapo
+  Map.addLayer(col6_i, vis, 'col6' + year_i);
       
   // define function to compute segments
   var getSegments = function (image, size) {
