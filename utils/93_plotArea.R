@@ -9,7 +9,7 @@ library (tidyr)
 library (tools)
 
 ## define root
-root <- '../table/area/v2/'
+root <- '../table/area/v31/'
 
 ## define function to import table
 readData <- function (path) {
@@ -29,8 +29,8 @@ readData <- function (path) {
   
   ## reorder
   recipe$variable <- factor(recipe$variable,
-                            levels = c("forest", "savanna", "wetland", "grassland", "pasture",
-                                       "agriculture", "mosaic", "other_nonVeg", "water")) 
+                            levels = c("forest", "savanna", "wetland", "grassland", 
+                                       "mosaic", "other_nonVeg", "water")) 
   
   
   return (recipe)
@@ -40,12 +40,14 @@ readData <- function (path) {
 data <- readData(root)
 
 ## plot general
-ggplot(data, aes(x= as.numeric(year), y= as.numeric(value)/1000000, colour= filename)) +
+#ggplot(subset(data, filename != "0_area_col6"), aes(x= as.numeric(year), y= as.numeric(value)/1000000, colour= filename)) +
+ggplot(na.omit(data), aes(x= as.numeric(year), y= as.numeric(value)/1000000, colour= filename)) +
   stat_summary(geom='line', fun='sum', size=1) +
   stat_summary(geom='point', fun='sum', size=1.5) +
-  scale_colour_manual(values=c('gray70', 'red', 'orange', 'yellow', 'green', 'forestgreen')) +
+  #scale_colour_manual(values=c('red', 'orange', 'yellow', 'green', 'forestgreen')) +
+  scale_colour_manual(values=c('gray40', 'red')) +
   facet_wrap(~variable, scales= 'free') +
-  xlab('year') + ylab ('area (Mha)') +
+  xlab('year') + ylab ('Area (Mha)') +
   theme_bw() +
   theme(panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank())
