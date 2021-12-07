@@ -9,6 +9,15 @@ var file_name = 'mode_filtered_v31';
 // mapbiomas_collection60_integration_v1
 // mode_filtered_v31
 
+// reclass matrixes
+// sentinel
+var m_from = [3, 4, 11, 12, 21, 25, 33];
+var m_to   = [3, 4, 12, 12, 21, 25, 33];
+
+// landsat - collection 6
+//var m_from = [3, 4, 5, 9, 11, 12, 15, 19, 20, 21, 40, 41, 36, 46, 47, 48, 22, 23, 24, 30, 39, 25, 26, 33, 31];
+//var m_to   = [3, 4, 3, 21,12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 21, 25, 33, 33, 33];
+
 // import classification data - each band needs to correspond to one year 
 var classification = ee.Image(file_path + file_name);
 
@@ -58,12 +67,12 @@ var excludedClasses = [
 
 // define pixel value that corresponds to each LAPIG class for col 6
 var classes = ee.Dictionary({
-  "Cultura Anual": 21,            //19 for collection 6
-  "Cultura Perene": 21,           //19 for collection 6
-  "Cultura Semi-Perene": 21,      //20 for collection 6
+  "Cultura Anual": 21,            
+  "Cultura Perene": 21,           
+  "Cultura Semi-Perene": 21,      
   "Infraestrutura Urbana": 25,
   "Mineração": 25,
-  "Pastagem Cultivada": 21,       // 15 for collection 6
+  "Pastagem Cultivada": 21,       
   "Formação Florestal": 3,
   "Rio, Lago e Oceano": 33,
   "Outra Área não Vegetada": 25,
@@ -85,6 +94,11 @@ years.forEach(function(year_i){
   var classification_i = classification.select('classification_' + year_i);
   // use only vlaid pixels, that is, not equal to zero
       classification_i = classification_i.updateMask(classification_i.neq(0));
+      //Map.addLayer(classification_i, {}, 'year ' + year_i);
+      
+  // reclassify accordin criteria 
+      classification_i = classification_i.remap(m_from, m_to).rename('classification_' + year_i);
+      //Map.addLayer(classification_i, {}, 'year ' + year_i);
       
   // import validation points and filter only to Cerrado 
   var valPoints_i = assetPoints
