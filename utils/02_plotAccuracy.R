@@ -3,6 +3,7 @@
 
 ## read libraries
 library (ggplot2)
+library(ggrepel)
 
 ## define root
 root <- '../table/accuracy/v31'
@@ -29,16 +30,37 @@ getTable <- function(obj) {
 ## read table
 data <- getTable(obj= root)
 
-## plot
-ggplot(data, aes(x=as.factor(YEAR), y= GLOBAL_ACC, fill= VERSION)) +
-  geom_jitter(alpha=0.2, aes(colour=VERSION)) +
-  geom_boxplot(alpha=0.7) +
-  #scale_fill_manual("Versão", values=c('red', 'blue'), labels=c('Sentinel v31', 'Coleção 6 - Integração 1')) +
-  #scale_colour_manual("Versão", values=c('red', 'blue'), labels=c('Sentinel v31', 'Coleção 6 - Integração 1')) +
+## line plot
+ggplot (data, aes(x= as.numeric(YEAR), y= GLOBAL_ACC, colour= reorder(VERSION, GLOBAL_ACC))) +
+  stat_summary(fun='mean', geom= 'point', size= 1.5) +
+  stat_summary(fun='mean', geom= 'line', size= 1) +
+  scale_colour_manual("Versão", values=c('red', 'orange', 'darkgreen'), labels=c('Sentinel BETA', 'Sentinel BETA + Segmentação', 'Coleção 6')) +
   theme_bw() +
-  xlab('Ano') + ylab('Acurácia Global')
-
-str(data)
+  xlab(NULL) + ylab('Acurácia Global')
 
 
+## box plot
+ggplot(data, aes(x=as.factor(YEAR), y= GLOBAL_ACC, fill= reorder(VERSION, GLOBAL_ACC), label= REGION)) +
+  geom_text_repel(position = position_jitter(seed=1), size= 2.5, aes(colour=reorder(VERSION, GLOBAL_ACC))) +
+  #geom_jitter(seed=1, alpha=0.1, aes(colour=reorder(VERSION, GLOBAL_ACC))) +
+  geom_boxplot(alpha=0.2) +
+  scale_fill_manual("Versão", values=c('red', 'orange', 'blue'), labels=c('Sentinel BETA', 'Sentinel BETA + Segmentação', 'Coleção 6')) +
+  scale_colour_manual("Versão", values=c('red', 'orange', 'blue'), labels=c('Sentinel BETA', 'Sentinel BETA + Segmentação', 'Coleção 6')) +
+  theme_bw() +
+  xlab(NULL) + ylab('Acurácia Global')
 
+
+## return means
+aggregate(x=list(accuracy= data$GLOBAL_ACC),
+          by=list(version= data$VERSION),
+          FUN= 'mean')
+
+## per region
+## line plot
+ggplot (data, aes(x= as.numeric(YEAR), y= GLOBAL_ACC, colour= reorder(VERSION, GLOBAL_ACC))) +
+  stat_summary(fun='mean', geom= 'point', size= 1.5) +
+  stat_summary(fun='mean', geom= 'line', size= 1) +
+  scale_colour_manual("Versão", values=c('red', 'orange', 'darkgreen'), labels=c('Sentinel BETA', 'Sentinel BETA + Segmentação', 'Coleção 6')) +
+  theme_bw() +
+  xlab(NULL) + ylab('Acurácia Global') +
+  facet_wrap(~REGION)
