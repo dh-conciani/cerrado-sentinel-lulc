@@ -1,11 +1,13 @@
 // define root folder for the classification data
-var file_path = 'users/dhconciani/sentinel-beta/sentinel-classification/';
+var file_path = 'users/dh-conciani/test-sentinel/';
 // users/dhconciani/sentinel-beta/sentinel-classification/
 // projects/mapbiomas-workspace/public/collection6/
+// users/dh-conciani/test-sentinel/
 
-var file_name = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31';
+var file_name = 'mode_filtered_v31';
 // CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31
 // mapbiomas_collection60_integration_v1
+// mode_filtered_v31
 
 // import classification data - each band needs to correspond to one year 
 var classification = ee.Image(file_path + file_name);
@@ -13,7 +15,8 @@ var classification = ee.Image(file_path + file_name);
 // import validation points 
 var assetPoints = ee.FeatureCollection('projects/mapbiomas-workspace/VALIDACAO/MAPBIOMAS_100K_POINTS_utf8');
 // import classification regions
-var regionsCollection = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
+var regionsCollection = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6')
+      //.limit(3);
 
 // import biomes vector
 var biomes = ee.Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster');
@@ -23,6 +26,7 @@ var vec_cerrado = biomes.updateMask(biomes.eq(4));
 // define years to be assessed 
 var years = [ 
             2016, 2017, 2018
+            //2018
             ];
             
 // exclude this classes from validation points (for col6)
@@ -54,12 +58,12 @@ var excludedClasses = [
 
 // define pixel value that corresponds to each LAPIG class for col 6
 var classes = ee.Dictionary({
-  "Cultura Anual": 21,
-  "Cultura Perene": 21,
-  "Cultura Semi-Perene": 21,
+  "Cultura Anual": 21,            //19 for collection 6
+  "Cultura Perene": 21,           //19 for collection 6
+  "Cultura Semi-Perene": 21,      //20 for collection 6
   "Infraestrutura Urbana": 25,
   "Mineração": 25,
-  "Pastagem Cultivada": 21,
+  "Pastagem Cultivada": 21,       // 15 for collection 6
   "Formação Florestal": 3,
   "Rio, Lago e Oceano": 33,
   "Outra Área não Vegetada": 25,
@@ -103,7 +107,7 @@ years.forEach(function(year_i){
     var paired_data = classification_ij.sampleRegions({
                       collection: valPoints_ij, 
                       properties: ['reference'], 
-                      scale: 30, 
+                      scale: 10, // 30 for collection 6
                       geometries: false});
     
     // compute confusion matrix
