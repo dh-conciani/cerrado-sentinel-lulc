@@ -1,10 +1,11 @@
 // define root folder for the classification data
-var file_path = 'users/dh-conciani/test-sentinel/';
+var file_path = 'users/dhconciani/sentinel-beta/sentinel-classification/';
 // users/dhconciani/sentinel-beta/sentinel-classification/
 // projects/mapbiomas-workspace/public/collection6/
 // users/dh-conciani/test-sentinel/
 
-var file_name = 'mode_filtered_v31';
+var file_name = 'CERRADO_sentinel_gapfill_wetfor_spatial_freq_temporal_v31';
+// CERRADO_sentinel_gapfill_wetfor_spatial_freq_temporal_v31
 // CERRADO_sentinel_gapfill_wetfor_spatial_freq_v31
 // mapbiomas_collection60_integration_v1
 // mode_filtered_v31
