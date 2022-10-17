@@ -32,7 +32,7 @@ ee.List.sequence({'start': 1, 'end': 38}).getInfo().forEach(function(reg_i) {
   var y = table.filterMetadata('mapb', 'equals', reg_i)//.aside(Map.addLayer);
   // export 
   Export.image.toAsset({
-    'image': r,
+    'image': x,
     'description': 'reg_' + reg_i,
     'assetId': 'users/dh-conciani/collection7/classification_regions/eachRegion_v2_10m/reg_' + reg_i,
     'pyramidingPolicy': {
