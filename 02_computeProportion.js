@@ -1,15 +1,41 @@
-// Compute area by ecoregion (using previous collection as reference) 
-// For clarification, write to <dhemerson.costa@ipam.org.br> and <felipe.lenti@ipam.org.br>
+// compute area by ecoregion to be used as reference to estimate samples distribution 
+// dhemerson.costa@ipam.org.br 
 
 // input metadata
-var version = '_v2';
-var bioma = "CERRADO";
+var version = '1';
+
+// define classes to be assessed
+var classes = [3, 4, 11, 12, 15, 19, 21, 25, 33];
 
 // output directory
-var dirout = 'projects/mapbiomas-workspace/AUXILIAR/CERRADO';
+var dirout = 'users/dh-conciani/collection7/0_sentinel/sample/area';
 
 // cerrado classification regions
-var regioesCollection = ee.FeatureCollection('projects/mapbiomas-workspace/AUXILIAR/CERRADO/cerrado_regioes_c6');
+var regionsCollection = ee.FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2');
+
+// set option (avaliable are 'year' or 'stable')
+var option = 'year' ; 
+
+// if option equal to year
+if (option == 'year') {
+  // define year to be used as reference
+  var year = '2000';
+  // load collection 6.0 
+  var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2')
+                    .select('classification_'+  year);
+}
+
+if (option == 'stable') {
+  var mapbiomas = ee.Image('users/dh-conciani/collection7/0_sentinel/masks/cerrado_stablePixels_col7_v1');
+}
+
+
+// define function to compute area (skm)
+var pixelArea = ee.Image.pixelArea().divide(1000000);
+
+// reclassify following cerrado strategy 
+mapbiomas = mapbiomas.remap([3, 4, 5, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
+                            [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33]);
 
 // mapbiomas color pallete
 var palettes = require('users/mapbiomas/modules:Palettes.js');
@@ -19,57 +45,38 @@ var vis = {
     'palette': palettes.get('classification6')
 };
 
-// define year to be used as reference
-var ano = '2000';
-
-// define function to compute area in squared kilometers
-var pixelArea = ee.Image.pixelArea().divide(1000000);
-
-// load collection 6.0 
-var colecao6 = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_integration_v1').select('classification_'+ano);
-
-// reclassify only to classes that cerrado maps
-colecao6 = colecao6.select('classification_'+ ano).remap(
-                  [3, 4, 5, 9, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33, 39, 40, 41, 46, 47, 48],
-                  [3, 4, 3, 9, 11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33, 19, 19, 19, 19, 19, 19]);
-
 // plot 
-Map.addLayer(colecao6, vis, 'Coleção 6 '+ ano, false);
+Map.addLayer(mapbiomas, vis, 'Mapbiomas ' + year, true);
 
-// generate a image by each one of the classes
-  var area03 = pixelArea.mask(colecao6.eq(3));
-  var area04 = pixelArea.mask(colecao6.eq(4));
-  var area09 = pixelArea.mask(colecao6.eq(9));
-  var area11 = pixelArea.mask(colecao6.eq(11));
-  var area12 = pixelArea.mask(colecao6.eq(12));
-  var area15 = pixelArea.mask(colecao6.eq(15));
-  var area19 = pixelArea.mask(colecao6.eq(19));
-  var area25 = pixelArea.mask(colecao6.eq(25));
-  var area33 = pixelArea.mask(colecao6.eq(33));
+// define function to get class area 
+// for each region 
+var getArea = function(feature) {
+  // get classification for the region [i]
+  var mapbiomas_i = mapbiomas.clip(feature);
+  // for each class [j]
+  classes.forEach(function(class_j) {
+    // create the reference area
+    var reference_ij = pixelArea.mask(mapbiomas_i.eq(class_j));
+    // compute area and insert as metadata into the feature 
+    feature = feature.set(String(class_j),
+                         ee.Number(reference_ij.reduceRegion({
+                                      reducer: ee.Reducer.sum(),
+                                      geometry: feature.geometry(),
+                                      scale: 30,
+                                      maxPixels: 1e13 }
+                                    ).get('area')
+                                  )
+                              ); // end of set
+                          }); // end of class_j function
+  // return feature
+  return feature;
+}; 
 
-// define .map function to apply area computation over each classification region
-var processaReg = function(regiao) {
-  regiao = regiao.set('floresta', ee.Number(area03.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('savana', ee.Number(area04.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('silv', ee.Number(area09.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('umida', ee.Number(area11.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('campo', ee.Number(area12.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('pasto', ee.Number(area15.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('agric', ee.Number(area19.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('nao_veg', ee.Number(area25.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  regiao = regiao.set('agua', ee.Number(area33.reduceRegion({reducer: ee.Reducer.sum(),geometry: regiao.geometry(), scale: 30,maxPixels: 1e13}).get('area')));
-  return regiao;
-};
-
-// apply function 
-var regiao2 = regioesCollection.map(processaReg);
-print(regiao2);
+var computed_obj = regionsCollection.map(getArea);
+print (computed_obj);
+Map.addLayer(computed_obj, {}, 'Result');
 
 // export computation as GEE asset
-Export.table.toAsset(regiao2, 'Cerrado_regions_col6_area' + ano + version, dirout + '/Cerrado_regions_col6_area'+ano +version);
-
-// plot 
-var blank = ee.Image(0).mask(0);
-var outline = blank.paint(regioesCollection, 'AA0000', 2); 
-var visPar = {'palette':'000000','opacity': 0.6};
-Map.addLayer(regioesCollection, visPar, 'Região', true);
+Export.table.toAsset({'collection': computed_obj, 
+                      'description': year + '_v' + version,
+                      'assetId': dirout + '/' + year + '_v' + version});
