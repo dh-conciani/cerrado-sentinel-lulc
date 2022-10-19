@@ -38,7 +38,7 @@ for (i in 1:length(region_name)) {
   ## get sample points for the region [i]
   samples_i <- samples$filterMetadata('mapb', 'equals', region_name[i])
   
-  ## get spectral signatures for a random year (repeate two times, using two different years
+  ## get spectral signatures for a random year (repeat two times, using two random years)
   for (j in 1:2) {
     print(paste0('year ', j, ' of 2'))
     ## get signatures
