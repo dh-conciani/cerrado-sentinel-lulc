@@ -38,17 +38,21 @@ for (i in 1:length(region_name)) {
   ## get sample points for the region [i]
   samples_i <- samples$filterMetadata('mapb', 'equals', region_name[i])
   
-  ## perform a set of [k] estimates for each region
-  for (k in 1:200) {
-    ## get sentinel for a random year from 2016 to 2021 and mosaic them 
-    sentinel_ij <- sentinel_i$filter(ee$Filter$eq('year', sample(x= 2016:2021, size= 1)))$mosaic()
-    
-    ## extract spectral signatures
-    sample_train <- na.omit(ee_as_sf(sentinel_ij$sampleRegions(collection= samples_i,
-                                                               scale= 10,
-                                                               geometries= TRUE,
-                                                               tileScale= 2), via = 'drive'))
+  ## get spectral signatures for a random year (repeate two times, using two different years
+  for (j in 1:2) {
+    print(paste0('year ', j, ' of 2'))
+    ## get signatures
+    sample_ij <- na.omit(ee_as_sf(sentinel_i$filter(ee$Filter$eq('year', sample(x= 2016:2021, size= 1)))$
+                                    mosaic()$
+                                    sampleRegions(collection= samples_i,
+                                                  scale= 10,
+                                                  geometries= TRUE,
+                                                  tileScale= 2), via = 'drive'))
   }
+  
+  
+  
+
   
   
 }
