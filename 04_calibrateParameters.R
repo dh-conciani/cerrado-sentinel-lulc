@@ -47,6 +47,7 @@ hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()
 ## for each classification region
 for (i in 1:length(region_name)) {
   print(paste0('processing region ', region_name[i]))
+  
   ## get sentinel only for region [i]
   sentinel_i <- sentinel$filterBounds(regions$filterMetadata('mapb', 'equals', region_name[i]))
   ## get sample points for the region [i]
@@ -55,7 +56,6 @@ for (i in 1:length(region_name)) {
   ## compute additional bands
   geo_coordinates <- ee$Image$pixelLonLat()$
     clip(regions$filterMetadata('mapb', 'equals', region_name[i]))
-  
   ## get latitude
   lat <- geo_coordinates$select('latitude')$add(5)$multiply(-1)$multiply(1000)$toInt16()
   ## get longitude
@@ -67,15 +67,21 @@ for (i in 1:length(region_name)) {
   
   ## get heigth above nearest drainage
   hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
-    clip(regions$filterMetadata('mapb', 'equals', region_name[i]))$
-    rename('hand')
+    clip(regions$filterMetadata('mapb', 'equals', region_name[i]))$rename('hand')
   
   ## get spectral signatures for a random year (repeat two times, using two random years)
   for (j in 1:2) {
     print(paste0('year ', j, ' of 2'))
-    ## get signatures
-    sample_ij <- na.omit(ee_as_sf(sentinel_i$filter(ee$Filter$eq('year', sample(x= 2016:2021, size= 1)))$
-                                    mosaic()$
+    
+    ## filter sentinel mosaic for a random year
+    sentinel_ij <- sentinel_i$filter(ee$Filter$eq('year', sample(x= 2016:2021, size= 1)))$mosaic()$
+      ## add auxiliary bands
+      addBands(lon_sin)$
+      addBands(lon_cos)$
+      addBands(hand)
+    
+    ## get  spectral signatures
+    sample_ij <- na.omit(ee_as_sf(sentinel_ij$
                                     sampleRegions(collection= samples_i,
                                                   scale= 10,
                                                   geometries= TRUE,
