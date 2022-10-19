@@ -43,7 +43,11 @@ for (i in 1:length(region_name)) {
     ## get sentinel for a random year from 2016 to 2021 and mosaic them 
     sentinel_ij <- sentinel_i$filter(ee$Filter$eq('year', sample(x= 2016:2021, size= 1)))$mosaic()
     
-    ## 
+    ## extract spectral signatures
+    sample_train <- na.omit(ee_as_sf(sentinel_ij$sampleRegions(collection= samples_i,
+                                                               scale= 10,
+                                                               geometries= TRUE,
+                                                               tileScale= 2), via = 'drive'))
   }
   
   
