@@ -30,6 +30,20 @@ sentinel <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3
   filter(ee$Filter$eq('version', '3'))$
   filter(ee$Filter$eq('biome', 'CERRADO'))
 
+
+## get latitude
+lat <- geo_coordinates$select('latitude')$add(5)$multiply(-1)$multiply(1000)$toInt16()
+## get longitude
+lon_sin <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
+  sin()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_sin')
+## cosine
+lon_cos <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
+  cos()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_cos')
+
+## get heigth above nearest drainage
+hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
+  clip(region_i)$rename('hand')
+
 ## for each classification region
 for (i in 1:length(region_name)) {
   print(paste0('processing region ', region_name[i]))
@@ -37,6 +51,24 @@ for (i in 1:length(region_name)) {
   sentinel_i <- sentinel$filterBounds(regions$filterMetadata('mapb', 'equals', region_name[i]))
   ## get sample points for the region [i]
   samples_i <- samples$filterMetadata('mapb', 'equals', region_name[i])
+  
+  ## compute additional bands
+  geo_coordinates <- ee$Image$pixelLonLat()$
+    clip(regions$filterMetadata('mapb', 'equals', region_name[i]))
+  
+  ## get latitude
+  lat <- geo_coordinates$select('latitude')$add(5)$multiply(-1)$multiply(1000)$toInt16()
+  ## get longitude
+  lon_sin <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
+    sin()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_sin')
+  ## cosine
+  lon_cos <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
+    cos()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_cos')
+  
+  ## get heigth above nearest drainage
+  hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
+    clip(regions$filterMetadata('mapb', 'equals', region_name[i]))$
+    rename('hand')
   
   ## get spectral signatures for a random year (repeat two times, using two random years)
   for (j in 1:2) {
@@ -52,7 +84,8 @@ for (i in 1:length(region_name)) {
   
   
   
-
+  
   
   
 }
+
