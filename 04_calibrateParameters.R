@@ -240,4 +240,4 @@ for (i in 1:length(region_name)) {
 ## export tables
 write.table(bands_xx, file = './_params/bands.csv')
 write.table(tune_xx, file = './_params/rf.csv')
-print('end \o/')
+print('end o/')
