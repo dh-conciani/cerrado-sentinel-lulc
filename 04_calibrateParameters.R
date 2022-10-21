@@ -173,6 +173,8 @@ for (i in 1:length(region_name)) {
                                         region = region_name[i],
                                         year = j))
     
+    rm(tune)
+
     ## compile all years of each region
     if (exists('tune_y') == FALSE) {
       tune_y <- tune_file_ij
@@ -187,6 +189,8 @@ for (i in 1:length(region_name)) {
                                          sd= aggregate(x=list(sd = imp$Overall), by=list(band= imp$band), FUN= 'sd')$sd,
                                          region= region_name[i],
                                          year= j))
+    
+    rm(imp)
     
     ## compile all years of each region
     if (exists('bands_y') == FALSE) {
@@ -211,7 +215,7 @@ for (i in 1:length(region_name)) {
     tune_xx <- rbind(tune_xx, tune_file_i)
   }
   
-  ## aggregate region metrics
+    ## aggregate region metrics
   bands_file_i <- as.data.frame(cbind(band= unique(bands_y$band),
                                       sum= aggregate(x=list(sum = as.numeric(bands_y$sum)), by=list(band= bands_y$band), FUN= 'mean')$sum,
                                       mean= aggregate(x=list(mean = as.numeric(bands_y$mean)), by=list(band= bands_y$band), FUN= 'mean')$mean,
@@ -224,6 +228,8 @@ for (i in 1:length(region_name)) {
   } else {
     bands_xx <- rbind(bands_xx, bands_file_i)
   }
+  
+  rm(tune_y, bands_y)
   
   print ('done :) -----------> next')
   
