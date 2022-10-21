@@ -14,10 +14,10 @@ library(DMwR2)
 n_years <- 3 
 
 ## define the number of model repetitions in each year
-n_rep <- 3
+n_rep <- 10
 
 ## set sub sample of proportion (%)
-p <- 1
+p <- 5
 
 ## set repeated cross-validation @params
 dcv_n <- 10   ## number
@@ -47,7 +47,7 @@ sentinel <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3
 
 ## for each classification region
 for (i in 1:length(region_name)) {
-  print(paste0('processing region ', region_name[i]))
+  print(paste0('processing region ', region_name[i],' --- ', i, ' of ', length(region_name[i])))
   
   ## get sentinel only for region [i]
   sentinel_i <- sentinel$filterBounds(regions$filterMetadata('mapb', 'equals', region_name[i]))
@@ -82,11 +82,11 @@ for (i in 1:length(region_name)) {
       addBands(hand)
     
     ## get spectral signatures from GEE and ingest locally 
-    sample_ij <- na.omit(ee_as_sf(sentinel_ij$
+    sample_ij <- as.data.frame(na.omit(ee_as_sf(sentinel_ij$
                                     sampleRegions(collection= samples_i,
                                                   scale= 10,
                                                   geometries= TRUE,
-                                                  tileScale= 2), via = 'drive'))
+                                                  tileScale= 2), via = 'drive')))
     
     
     ## remove description columns 
@@ -115,6 +115,7 @@ for (i in 1:length(region_name)) {
     ## set prediction function 
     customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
       predict(modelFit, newdata)
+    customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
     
     ## set data-structure functions 
     customRF$sort <- function(x) x[order(x[,1]),]
@@ -127,7 +128,7 @@ for (i in 1:length(region_name)) {
                             allowParallel = TRUE)
     
     ## set a grid of parameters to be tested (half od default, default and double)
-    tunegrid <- expand.grid(.mtry=c(sqrt(ncol(sample_ij))/2, sqrt(ncol(sample_ij)), sqrt(ncol(sample_ij))*2),
+    tunegrid <- expand.grid(.mtry=c(round(sqrt(ncol(sample_ij)))/2, round(sqrt(ncol(sample_ij))), round(sqrt(ncol(sample_ij))*2)),
                             .ntree=c(100, 300))
     
     ## standardize seed
@@ -197,7 +198,6 @@ for (i in 1:length(region_name)) {
     }
     
     
-
   } ## end of years loop
  
   ## aggregate statistics for tuning parameters
