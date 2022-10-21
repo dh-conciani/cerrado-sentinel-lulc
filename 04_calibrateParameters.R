@@ -17,7 +17,7 @@ n_years <- 3
 n_rep <- 10
 
 ## set sub sample of proportion (%)
-p <- 5
+p <- 10
 
 ## set repeated cross-validation @params
 dcv_n <- 10   ## number
