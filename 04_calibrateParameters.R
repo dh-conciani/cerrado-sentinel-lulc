@@ -10,8 +10,18 @@ library(AppliedPredictiveModeling)
 library(reshape2)
 library(DMwR2)
 
-## set random forest heuristic learning functions
+## set a number of random years to be used in the estimation
+n_years <- 3 
 
+## define the number of model repetitions in each year
+n_rep <- 3
+
+## set sub sample of proportion (%)
+p <- 1
+
+## set repeated cross-validation @params
+dcv_n <- 10   ## number
+dcv_rep <- 3  ## repeats
 
 ## avoid scientific notation
 options(scipen= 999)
@@ -60,9 +70,7 @@ for (i in 1:length(region_name)) {
   hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
     clip(regions$filterMetadata('mapb', 'equals', region_name[i]))$rename('hand')
   
-  ## get spectral signatures for a random year (repeat two times, using two random years)
-  n_years <- 2
-  
+  ## get spectral signatures for a random year (repeat n times)
   for (j in 1:n_years) {
     print(paste0('year ', j, ' of ', n_years))
     
@@ -112,10 +120,6 @@ for (i in 1:length(region_name)) {
     customRF$sort <- function(x) x[order(x[,1]),]
     customRF$levels <- function(x) x$reference
     
-    ## set repeated cross-validation folds
-    dcv_n <- 10
-    dcv_rep <- 3
-    
     ## set train control 
     control <- trainControl(method="repeatedcv", 
                             number= dcv_n, 
@@ -129,14 +133,9 @@ for (i in 1:length(region_name)) {
     ## standardize seed
     set.seed(1)
     
-    ## define the number of model repetitions in each year
-    n_rep <- 3
-    
     ## run n times
     for (k in 1:n_rep) {
-      print(paste0('training model ', k, ' of ', n_rep))
-      ## create a sub sample of x percent
-      p <- 5
+      print(paste0('running repetition ', k, ' of ', n_rep))
       
       ## perform sub sample
       sub_sample <- sample_ij[sample(x= 1: nrow(sample_ij),
@@ -167,6 +166,8 @@ for (i in 1:length(region_name)) {
       
     } ## end of sub-sample repetition
     
+    
+    
     ## aggregate statistics for tuning parameters
     tune_file_ij <- as.data.frame(cbind(mtry= round(mean(tune$mtry)), 
                                         ntree= round(mean(tune$ntree)), 
@@ -194,7 +195,8 @@ for (i in 1:length(region_name)) {
     } else {
       bands_y <- rbind(bands_y, bands_file_ij)
     }
-
+    
+    
 
   } ## end of years loop
  
@@ -224,9 +226,14 @@ for (i in 1:length(region_name)) {
   } else {
     bands_xx <- rbind(bands_xx, bands_file_i)
   }
-
+  
+  print ('done :) -----------> next')
+  
+  ## clean regional variables
+  #rm (sentinel_i, samples_i, geo_coordinates, lat, lon_sin, lon_cos, hand)
 } ## end of regions loop
 
 ## export tables
 write.table(bands_xx, file = './_params/bands.csv')
 write.table(tune_xx, file = './_params/rf.csv')
+print('end \o/')
