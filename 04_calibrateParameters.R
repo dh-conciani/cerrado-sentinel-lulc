@@ -45,7 +45,7 @@ sentinel <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3
 
 ## for each classification region
 for (i in 1:length(region_name)) {
-  print(paste0('processing region ', region_name[i],' --- ', i, ' of ', length(region_name[i])))
+  print(paste0('processing region ', region_name[i],' --- ', i, ' of ', length(region_name)))
   
   ## get sentinel only for region [i]
   sentinel_i <- sentinel$filterBounds(regions$filterMetadata('mapb', 'equals', region_name[i]))
