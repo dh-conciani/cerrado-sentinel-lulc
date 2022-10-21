@@ -43,8 +43,6 @@ sentinel <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3
   filter(ee$Filter$eq('version', '3'))$
   filter(ee$Filter$eq('biome', 'CERRADO'))
 
-
-
 ## for each classification region
 for (i in 1:length(region_name)) {
   print(paste0('processing region ', region_name[i],' --- ', i, ' of ', length(region_name[i])))
@@ -83,10 +81,10 @@ for (i in 1:length(region_name)) {
     
     ## get spectral signatures from GEE and ingest locally 
     sample_ij <- as.data.frame(na.omit(ee_as_sf(sentinel_ij$
-                                    sampleRegions(collection= samples_i,
-                                                  scale= 10,
-                                                  geometries= TRUE,
-                                                  tileScale= 2), via = 'drive')))
+                                                  sampleRegions(collection= samples_i,
+                                                                scale= 10,
+                                                                geometries= TRUE,
+                                                                tileScale= 2), via = 'drive')))
     
     
     ## remove description columns 
@@ -116,9 +114,9 @@ for (i in 1:length(region_name)) {
     customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
       predict(modelFit, newdata)
     customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
-    
-    ## set data-structure functions 
-    customRF$sort <- function(x) x[order(x[,1]),]
+      
+      ## set data-structure functions 
+      customRF$sort <- function(x) x[order(x[,1]),]
     customRF$levels <- function(x) x$reference
     
     ## set train control 
@@ -199,7 +197,7 @@ for (i in 1:length(region_name)) {
     
     
   } ## end of years loop
- 
+  
   ## aggregate statistics for tuning parameters
   tune_file_i <- as.data.frame(cbind(mtry= round(mean(tune_y$mtry)), 
                                      ntree= round(mean(tune_y$ntree)), 
