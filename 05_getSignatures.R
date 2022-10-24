@@ -1,13 +1,13 @@
 ## For clarification, write to <dhemerson.costa@ipam.org.br> 
 ## Exported data is composed by spatialPoints with spectral signature values grouped by column
-## Auxiliary bands were computed (Lat, Long, NDVI amplitude and HAND)
+## Auxiliary bands were computed (Lat, Long, and HAND)
 
 ## read libraries
 library(rgee)
 ee_Initialize()
 
 ## define strings to use as metadata (output)
-version <- "2"     ## version string
+version <- "1"     ## version string
 
 ## define output directory
 dirout <- 'users/dh-conciani/collection7/training/v2/'
