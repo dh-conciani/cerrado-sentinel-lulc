@@ -36,7 +36,6 @@ regions_list <- unique(regionsCollection$aggregate_array('mapb')$getInfo())
 ## define years to extract spectral signatures (temporal operator)
 years <- unique(mosaic$aggregate_array('year')$getInfo())
 
-
 ## for each region 
 for (i in 1:length(regions_list)) {
   ## for each year
@@ -74,7 +73,7 @@ for (i in 1:length(regions_list)) {
     
     ## get the most 80 important bands, using the importance 
     bands <- levels(reorder(importance$band, -importance$mean))[1:n_bands]
-
+    
     ## get only important bands
     mosaic_i <- mosaic_i$select(bands)$
       addBands(lat)$
@@ -86,7 +85,7 @@ for (i in 1:length(regions_list)) {
     samples_ij <- samples$filterBounds(regionsCollection$filterMetadata('mapb', "equals", regions_list[i]))
     print(paste0('number of points: ', samples_ij$size()$getInfo()))      
     
-     ## get training samples
+    ## get training samples
     training_i <- mosaic_i$sampleRegions(collection= samples_ij,
                                          scale= 10,
                                          geometries= TRUE,
