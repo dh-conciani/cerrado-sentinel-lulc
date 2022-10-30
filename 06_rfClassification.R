@@ -1,4 +1,4 @@
-## Run smileRandomForest classifier - Mapbiomas Collection 7.0
+## Run smileRandomForest classifier - Mapbiomas Sentinel Collection 1.0
 ## For clarification, write to <dhemerson.costa@ipam.org.br> 
 
 ## import libraries
