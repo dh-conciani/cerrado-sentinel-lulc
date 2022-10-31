@@ -60,6 +60,12 @@ ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
 var native_mode = patches.reduce(ee.Reducer.mode());
 Map.addLayer(native_mode, vis, 'native mode', false);
 
+// get the frequency of savanna class
+var exp = '100*((b(0)+b(1)+b(2)+b(3)+b(4)+b(5)+b(6))/7)';
+// get frequency
+var savanna_freq = inputClassification.eq(4).expression(exp);
+//Map.addLayer(savanna_freq.randomVisualizer())
+
 // create filtered recipe
 var filtered = ee.Image([]);
 
@@ -67,7 +73,10 @@ var filtered = ee.Image([]);
 ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
   .forEach(function(year_i) {
     var image_i = inputClassification.select(['classification_' + year_i])
-                    .where(binary.select(['binary_' + year_i]).eq(1), native_mode);
+                    // replace native vegetation by the mode
+                    .where(binary.select(['binary_' + year_i]).eq(1), native_mode)
+                    // when mode is wetland but savanna appears in at least 40% of the time, keep savanna
+                    .where(native_mode.eq(11).and(savanna_freq.gt(40)), 4);
   // bind
   filtered = filtered.addBands(image_i);
   });
