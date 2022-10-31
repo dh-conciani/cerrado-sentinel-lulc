@@ -75,8 +75,9 @@ ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
     var image_i = inputClassification.select(['classification_' + year_i])
                     // replace native vegetation by the mode
                     .where(binary.select(['binary_' + year_i]).eq(1), native_mode)
-                    // when mode is wetland but savanna appears in at least 40% of the time, keep savanna
-                    .where(native_mode.eq(11).and(savanna_freq.gt(40)), 4);
+                    // when mode is wetland but savanna appears in at least 40% of the time, keep savanna in years with NV
+                    .where(binary.select(['binary_' + year_i]).eq(1).and(native_mode.eq(11))
+                                                                    .and(savanna_freq.gt(40)), 4);
   // bind
   filtered = filtered.addBands(image_i);
   });
