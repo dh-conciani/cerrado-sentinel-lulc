@@ -2,13 +2,13 @@
 // dhemerson.costa@ipam.org.br
 
 // set root directory 
-var root = 'users/dh-conciani/collection7/c7-general-post/';
+var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // set file to be processed
-var file_in = 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_v5';
+var file_in = 'CERRADO_col1_gapfill_v1';
 
 // set metadata to export 
-var version_out = '5';
+var version_out = '1';
 
 // import mapbiomas color ramp
 var vis = {
@@ -18,18 +18,20 @@ var vis = {
 };
 
 // import classification 
-var inputClassification = ee.Image(root + file_in);
+//var inputClassification = ee.Image(root + file_in);
+var inputClassification = ee.ImageCollection('users/dh-conciani/collection7/0_sentinel/c1-general')
+                            .mosaic()
 
 Map.addLayer(inputClassification.select(['classification_2021']), vis, 'data 2021');
 
 // create recipe 
 var binary = ee.Image([]);
 // binarize native vegetation
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
+ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
   .forEach(function(year_i) {
     var image_i = inputClassification.select(['classification_' + year_i])
-                                 .remap([3, 4, 11, 12, 21, 25, 33],
-                                        [1, 1,  1,  1,  0,  0,  0])
+                                 .remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
+                                        [1, 1,  1,  1,  0,  0,  0,  0,  0])
                                         .rename('binary_' + year_i);
     // bind
     binary = binary.addBands(image_i.updateMask(image_i.eq(1)));
@@ -42,7 +44,7 @@ Map.addLayer(inputClassification, {}, 'input', false);
 
 // update collection only with native vegetation temporal patches
 var patches = ee.Image([]);
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
+ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
   .forEach(function(year_i) {
     // get classification
     var image_i = inputClassification.select(['classification_' + year_i])
@@ -62,7 +64,7 @@ Map.addLayer(native_mode, vis, 'native mode', false);
 var filtered = ee.Image([]);
 
 // apply mode for the temporal patches of native vegetation
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
+ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
   .forEach(function(year_i) {
     var image_i = inputClassification.select(['classification_' + year_i])
                     .where(binary.select(['binary_' + year_i]).eq(1), native_mode);
