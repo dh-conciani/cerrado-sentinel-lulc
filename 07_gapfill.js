@@ -1,6 +1,5 @@
-// Post-processing - Gapfill filter
-// Use raw classification as input (one image with 36 bands per region) 
-// For clarification, write to <dhemerson.costa@ipam.org.br> and <felipe.lenti@ipam.org.br>
+// Post-processing - Gapfill filling, uses raw classification as input
+// For clarification write to <dhemerson.costa@ipam.org.br>
 
 // define geometry (raw extent of cerrado)
 var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
@@ -17,20 +16,20 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
 
 // define strings to be used as metadata
 // input version
-var dircol6 = 'users/dhconciani/sentinel-beta/sentinel-classification';
-var version = 31;    
+var dircol6 = 'users/dh-conciani/collection7/0_sentinel/c1-general';
+var version = '1';    
 var bioma = "CERRADO";
 
 // queens case
 var VeightConnected = true;
 
 // define prefix for the output filename
-var dirout = 'users/dhconciani/sentinel-beta/sentinel-classification/';
+var dirout = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var prefixo_out = 'CERRADO_sentinel_gapfill_v';
-var version_out = '31';     
+var version_out = '1';     
 
 // dewfine year to plot a inspect
-var ano = 2020;
+var ano = 2022;
 
 ////*************************************************************
 // Do not Change from these lines
@@ -48,7 +47,7 @@ var vis = {
 var image = ee.ImageCollection(dircol6)
             .filterMetadata('version', 'equals', version)
             .filterMetadata('biome', 'equals', bioma)
-            .min();
+            .min()
 
 // filter image
 image = image.mask(image.neq(0));
@@ -56,7 +55,7 @@ print(image);
 
 // define years to be used in the filter
 var years = [
-    2016, 2017, 2018, 2019, 2020
+    2016, 2017, 2018, 2019, 2020, 2021, 2022
     ];
 
 /**
