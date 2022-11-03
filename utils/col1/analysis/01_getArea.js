@@ -5,46 +5,18 @@
 // calculate area of @author João Siqueira
 
 // define root imageCollection
-var root = 'users/dh-conciani/collection7/c7-general-post/';
+var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define files to process 
 var asset = [
-  //root + 'CERRADO_col7_gapfill_v1',
-  //root + 'CERRADO_col7_gapfill_incidence_v1'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v1'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v2',
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v3',
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_spatial_v2',
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_spatial_v3'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_v3'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_v4'
-  // root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_v5'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_integration_v5'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_perturbance_v5'
-  //root + 'CERRADO_col7_gapfill_v2',
-  //root + 'CERRADO_col7_gapfill_incidence_v6',
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v6'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_v6'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v7'
-  //root + 'CERRADO_col7_gapfill_incidence_v8'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_v8'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_v8'
-  //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_geomorfology_v8'
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_geomorfology_spatial_v8'
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_geomorfology_spatial_v9'
-   //root + 'CERRADO_col7_pseudo_v9',
-   //root + 'CERRADO_col7_pseudoRocky_v9'
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_v8',
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_v20',
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_v21'
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_v20',
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_geomorfology_v6',
-   //root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_geomorfology_spatial_v20',
-   root + 'CERRADO_col7_native30_rocky3'
+  root + 'CERRADO_sentinel_gapfill_v1',
+  root + 'CERRADO_sentinel_gapfill_temporal_v1',
+  root + 'CERRADO_sentinel_gapfill_temporal_frequency_v1',
+  root + 'CERRADO_sentinel_gapfill_temporal_frequency_spatial_v1'
   ];
 
 // define classification regions 
-var territory = ee.Image('users/dh-conciani/collection7/classification_regions/raster')
+var territory = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2')
         .rename('territory');
 
 // plot regions
@@ -52,13 +24,13 @@ Map.addLayer(territory.randomVisualizer());
 
 
 // change the scale if you need.
-var scale = 30;
+var scale = 10;
 
 // define the years to bem computed 
-var years = ee.List.sequence({'start': 1985, 'end': 2021, 'step': 1}).getInfo();
+var years = ee.List.sequence({'start': 2016, 'end': 2022, 'step': 1}).getInfo();
 
 // define a Google Drive output folder 
-var driverFolder = 'AREA-EXPORT';
+var driverFolder = 'AREA-EXPORT-SENTINEL-C1';
 
 // for each file 
 asset.map(function(file) {
@@ -104,7 +76,7 @@ asset.map(function(file) {
               reducer: ee.Reducer.sum().group(1, 'class').group(1, 'territory'),
               geometry: geometry,
               scale: scale,
-              maxPixels: 1e12
+              maxPixels: 1e13
           });
           
       territotiesData = ee.List(territotiesData.get('groups'));
@@ -132,7 +104,7 @@ asset.map(function(file) {
   
   Export.table.toDrive({
       collection: areas,
-      description: basename,
+      description: 'AREA-' + basename,
       folder: driverFolder,
       fileFormat: 'CSV'
   });
