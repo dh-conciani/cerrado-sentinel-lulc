@@ -1,62 +1,53 @@
-## explore regional parameters 
+## plot areas from collection 1 - sentinel
+## dhemerson.costa@ipam.org.br
 
+# read libraries
 library(ggplot2)
+library(reshape2)
 
-## read data
-rf <- read.csv('./utils/col1/_params/rf.csv', sep=' ', dec='.')
-bands <- read.csv('./utils/col1/_params/bands.csv', sep=' ', dec= '.')
+## avoid sci-notation
+options(scipen= 999)
 
-## plot 
-ggplot(rf, aes(mtry)) +
-  geom_density(fill='yellow', col= 'gray20', alpha=0.3) +
-  theme_minimal()
+## set root
+root <- './table/area/'
 
-ggplot(rf, aes(ntree)) +
-  geom_density(fill='green', col= 'gray20', alpha=0.3) +
-  theme_minimal()
+## list files
+files <- list.files(root, full.names= TRUE)
 
-## get the most important variables
-for (i in 1:length(unique(bands$region))) {
-  ## get region x
-  x <- subset(bands, region == unique(bands$region)[i])
-  ## get 15 first
-  x <- levels(reorder(x$band, -x$mean))[1:80]
-  ## compile 
-  if (exists('top') == FALSE) {
-    top <- x
-  } else {
-    top <- rbind(top, x)
-  }
-  
+## create recipe
+data <- as.data.frame(NULL)
+
+## read and stack files
+for (i in 1:length(unique(files))) {
+  ## read file [i]
+  x <- read.csv(files[i])[-1][-6]
+  ## merge
+  data <- rbind(data, x)
+  rm(x)
 }
 
-## what variables most appear in the top
-best <- reshape2::melt(table(top))
+## rename classes
+data$class_id <- gsub('^3$', 'Forest', 
+                      gsub('^4$', 'Savanna',
+                           gsub('^11$', 'Wetland',
+                                gsub('^12$', 'Grassland',
+                                     gsub('^15$', 'Farming',
+                                          gsub('^19$', 'Farming',
+                                               gsub('^21$', 'Farming',
+                                                    gsub('^25$', 'Non-vegetated',
+                                                         gsub('^33$', 'Water',
+                                                              gsub('^29$', 'Rocky-outcrop',
+                                                                   data$class_id))))))))))
 
-## get the worse  variables
-for (i in 1:length(unique(bands$region))) {
-  ## get region x
-  x <- subset(bands, region == unique(bands$region)[i])
-  ## get 15 first
-  x <- levels(reorder(x$band, -x$mean))[81:length(x$band)]
-  ## compile 
-  if (exists('worse') == FALSE) {
-    worse <- x
-  } else {
-    worse <- rbind(worse, x)
-  }
-  
-}
+## parse filenames and get suitable names
+data$file <- substr(data$file, start= nchar('CERRADO_sentinel_') + 1, stop= 1e2)
 
-## what variables most appear in the worse
-worse <- reshape2::melt(table(worse))
-
-ggplot(data= worse, aes(x= reorder(worse, value), y= value, colour= value)) +
-  geom_point(stat='identity') +
-  scale_colour_gradient(low= '#0029F6', high= '#FF02D9') +
-  coord_flip() +
-  xlab(NULL) +
-  ylab('number of regions') +
-  theme_minimal() +
-  theme(text = element_text(size = 9))
-
+## plot
+ggplot(data= data, mapping= aes(x= year, y= area/1e6, group= as.factor(file), col= as.factor(file))) +
+  #stat_summary(fun='sum', geom= 'line',  alpha= .15, size=3) +
+  stat_summary(fun='sum', geom= 'line') +
+  scale_colour_manual('File', values=c('gray60', 'red')) +
+  facet_wrap(~class_id, scales= 'free_y') + 
+  theme_bw() +
+  ylab('Área (Mha)') +
+  xlab(NULL)
