@@ -5,10 +5,10 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define input file 
-var file_in = 'CERRADO_sentinel_gapfill_temporal_v1';
+var file_in = 'CERRADO_sentinel_gapfill_temporal_v2';
 
 // define output version 
-var version_out = 1;
+var version_out = 2;
 
 // load classification
 var classification = ee.Image(root + file_in);
