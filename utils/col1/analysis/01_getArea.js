@@ -9,10 +9,10 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define files to process 
 var asset = [
-  root + 'CERRADO_sentinel_gapfill_v1',
-  root + 'CERRADO_sentinel_gapfill_temporal_v1',
-  root + 'CERRADO_sentinel_gapfill_temporal_frequency_v1',
-  root + 'CERRADO_sentinel_gapfill_temporal_frequency_spatial_v1'
+  //root + 'CERRADO_sentinel_gapfill_v1',
+  root + 'CERRADO_sentinel_gapfill_temporal_v2',
+  //root + 'CERRADO_sentinel_gapfill_temporal_frequency_v2',
+  //root + 'CERRADO_sentinel_gapfill_temporal_frequency_spatial_v2'
   ];
 
 // define classification regions 
