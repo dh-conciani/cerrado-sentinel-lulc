@@ -1,6 +1,8 @@
 // temporal filter - cerrado biome 
 // dhemerson.costa@ipam.org.br
 
+// filter first year, apply temporal-window and filter last year 
+
 // set root directory 
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
