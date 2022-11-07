@@ -13,8 +13,10 @@ var asset = [
   //root + 'CERRADO_sentinel_gapfill_temporal_v2',
   //root + 'CERRADO_sentinel_gapfill_temporal_freq_v2'
   //root + 'CERRADO_sentinel_gapfill_freq_v4'
-  root + 'CERRADO_sentinel_gapfill_temporal_v6',
-  root + 'CERRADO_sentinel_gapfill_temporal_v7'
+  //root + 'CERRADO_sentinel_gapfill_temporal_v6',
+  //root + 'CERRADO_sentinel_gapfill_temporal_v7'
+  root + 'CERRADO_sentinel_gapfill_temporal_v5',
+  root + 'CERRADO_sentinel_gapfill_temporal_v8'
 
   ];
 
