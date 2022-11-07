@@ -5,10 +5,10 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define input file 
-var file_in = 'CERRADO_sentinel_gapfill_temporal_frequency_v1';
+var file_in = 'CERRADO_sentinel_gapfill_freq_temporal2x_v8';
 
 // define output version 
-var version_out = 1;
+var version_out = 8;
 
 // read image
 var classification = ee.Image(root + file_in);
@@ -93,8 +93,8 @@ Map.addLayer(recipe.select(['classification_2021']), vis, 'filtered 2021 - round
 // export as GEE asset
 Export.image.toAsset({
     'image': recipe,
-    'description': 'CERRADO_col7_gapfill_temporal_frequency_spatial_v' + version_out,
-    'assetId': root + 'CERRADO_col7_gapfill_temporal_frequency_spatial_v' + version_out,
+    'description': 'CERRADO_sentinel_gapfill_freq_temporal2x_spatial_v' + version_out,
+    'assetId': root + 'CERRADO_sentinel_gapfill_freq_temporal2x_spatial_' + version_out,
     'pyramidingPolicy': {
         '.default': 'mode'
     },
