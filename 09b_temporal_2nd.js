@@ -1,0 +1,72 @@
+// temporal filter - cerrado biome 
+// dhemerson.costa@ipam.org.br
+
+// set root directory 
+var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
+
+// set file to be processed
+var file_in = 'CERRADO_sentinel_gapfill_temporal_v8';
+
+// set metadata to export 
+var version_out = '8';
+
+// import mapbiomas color ramp
+var vis = {
+    'min': 0,
+    'max': 49,
+    'palette': require('users/mapbiomas/modules:Palettes.js').get('classification6')
+};
+
+// import classification 
+var inputClassification = ee.Image(root + file_in);
+
+// remap all anthopogenic classes only to single-one [21]
+var recipe = ee.Image([])
+ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
+    .forEach(function(year_i) {
+      // get year [i]
+      var classification_i = inputClassification.select(['classification_' + year_i])
+        // remap
+        .remap([3, 4, 11, 12, 15, 19, 21, 25, 33],
+               [3, 3, 3,   3, 21, 21, 21, 25, 33])
+               .rename('classification_' + year_i);
+               // insert into classification
+               recipe = recipe.addBands(classification_i);
+    });
+
+// create mask in the 2nd year
+var to_mask = recipe.select(['classification_2016']).eq(3)    
+              .and(recipe.select(['classification_2017']).eq(21))             
+              .and(recipe.select(['classification_2018']).eq(3));
+           
+// rectify value in the 2nd year
+var filtered = inputClassification.select(['classification_2017'])
+                  .where(to_mask.eq(1), inputClassification.select(['classification_2018']));
+
+
+// rectfy 2nd year
+Map.addLayer(to_mask.randomVisualizer(), {}, 'to_mask');
+Map.addLayer(filtered, vis, 'filtered');
+Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filtered');
+
+// build output
+var toExport = inputClassification.select(['classification_2016'])
+                  .addBands(filtered)
+                  .addBands(inputClassification.select(['classification_2018']))
+                  .addBands(inputClassification.select(['classification_2019']))
+                  .addBands(inputClassification.select(['classification_2020']))
+                  .addBands(inputClassification.select(['classification_2021']))
+                  .addBands(inputClassification.select(['classification_2022']));
+
+// export 
+Export.image.toAsset({
+    'image': toExport,
+    'description': 'CERRADO_sentinel_gapfill_freq_temporal2x_v' + version_out,
+    'assetId': root +  'CERRADO_sentinel_gapfill_freq_temporal2x_v' + version_out,
+    'pyramidingPolicy': {
+        '.default': 'mode'
+    },
+    'region': inputClassification.geometry(),
+    'scale': 10,
+    'maxPixels': 1e13
+});
