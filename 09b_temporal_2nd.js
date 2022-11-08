@@ -8,7 +8,7 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var file_in = 'CERRADO_sentinel_gapfill_temporal_v8';
 
 // set metadata to export 
-var version_out = '8';
+var version_out = '9';
 
 // import mapbiomas color ramp
 var vis = {
@@ -68,7 +68,7 @@ Map.addLayer(filtered_17, vis, 'filtered 2017', false);
 
 // build output
 var toExport = filtered_16
-                  .addBands(filtered17)
+                  .addBands(filtered_17)
                   .addBands(inputClassification.select(['classification_2018']))
                   .addBands(inputClassification.select(['classification_2019']))
                   .addBands(inputClassification.select(['classification_2020']))
@@ -87,5 +87,3 @@ Export.image.toAsset({
     'scale': 10,
     'maxPixels': 1e13
 });
-
-*/
