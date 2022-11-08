@@ -35,7 +35,7 @@ ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
     });
 
 // apply non-vegetated area filter in 2016
-// create mask in the 2nd year
+// create mask in the 1st year
 var to_mask = recipe.select(['classification_2016']).eq(25)    
               .and(recipe.select(['classification_2017']).neq(25));
 // apply 
@@ -48,30 +48,27 @@ Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filte
 Map.addLayer(to_mask.randomVisualizer(), {}, 'mask 2016 nonveg', false);
 Map.addLayer(filtered_16, vis, 'filtered 2016', false);
 
-
-/*
-
 // create mask in the 2nd year
-var to_mask = recipe.select(['classification_2016']).eq(3)    
+var to_mask2 = recipe.select(['classification_2017']).eq(25)    
+              .and(recipe.select(['classification_2018']).neq(25));
+
+var to_mask3 = recipe.select(['classification_2016']).eq(3)    
               .and(recipe.select(['classification_2017']).eq(21))             
               .and(recipe.select(['classification_2018']).eq(3));
-           
-// rectify value in the 2nd year
+
+// apply filter
 var filtered_17 = inputClassification.select(['classification_2017'])
-                  .where(to_mask.eq(1), inputClassification.select(['classification_2018']));
+                  .where(to_mask3.eq(1), inputClassification.select(['classification_2018']))
+                  .where(to_mask2.eq(1), inputClassification.select(['classification_2018']));
 
-
-// rectfy 2nd year
-Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filtered 2017', false);
-Map.addLayer(to_mask.randomVisualizer(), {}, 'to_mask_agro', false);
-Map.addLayer(filtered_17, vis, 'filtered 2017 agro', false);
-
-
-
+// plot
+Map.addLayer(to_mask2.randomVisualizer(), {}, 'mask 2017 nonveg', false);
+Map.addLayer(to_mask3.randomVisualizer(), {}, 'mask 2017 agro', false);
+Map.addLayer(filtered_17, vis, 'filtered 2017', false);
 
 // build output
-var toExport = inputClassification.select(['classification_2016'])
-                  .addBands(filtered)
+var toExport = filtered_16
+                  .addBands(filtered17)
                   .addBands(inputClassification.select(['classification_2018']))
                   .addBands(inputClassification.select(['classification_2019']))
                   .addBands(inputClassification.select(['classification_2020']))
