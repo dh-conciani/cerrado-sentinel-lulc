@@ -17,7 +17,8 @@ var asset = [
   //root + 'CERRADO_sentinel_gapfill_temporal_v7'
   //root + 'CERRADO_sentinel_gapfill_temporal_v5',
   //root + 'CERRADO_sentinel_gapfill_temporal_v8',
-  root +  'CERRADO_sentinel_gapfill_freq_temporal2x_v8'
+  // root +  'CERRADO_sentinel_gapfill_freq_temporal2x_v8',
+  root + 'CERRADO_sentinel_gapfill_freq_temporal2x_stab_v88'
 
   ];
 
