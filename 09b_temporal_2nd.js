@@ -34,20 +34,40 @@ ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
                recipe = recipe.addBands(classification_i);
     });
 
+// apply non-vegetated area filter in 2016
+// create mask in the 2nd year
+var to_mask = recipe.select(['classification_2016']).eq(25)    
+              .and(recipe.select(['classification_2017']).neq(25));
+// apply 
+var filtered_16 = inputClassification.select(['classification_2016'])
+                  .where(to_mask.eq(1), inputClassification.select(['classification_2017']));
+
+// plot
+Map.addLayer(inputClassification.select(['classification_2016']), vis, 'un-filtered 2016', false);
+Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filtered 2017', false);
+Map.addLayer(to_mask.randomVisualizer(), {}, 'mask 2016 nonveg', false);
+Map.addLayer(filtered_16, vis, 'filtered 2016', false);
+
+
+/*
+
 // create mask in the 2nd year
 var to_mask = recipe.select(['classification_2016']).eq(3)    
               .and(recipe.select(['classification_2017']).eq(21))             
               .and(recipe.select(['classification_2018']).eq(3));
            
 // rectify value in the 2nd year
-var filtered = inputClassification.select(['classification_2017'])
+var filtered_17 = inputClassification.select(['classification_2017'])
                   .where(to_mask.eq(1), inputClassification.select(['classification_2018']));
 
 
 // rectfy 2nd year
-Map.addLayer(to_mask.randomVisualizer(), {}, 'to_mask');
-Map.addLayer(filtered, vis, 'filtered');
-Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filtered');
+Map.addLayer(inputClassification.select(['classification_2017']), vis, 'un-filtered 2017', false);
+Map.addLayer(to_mask.randomVisualizer(), {}, 'to_mask_agro', false);
+Map.addLayer(filtered_17, vis, 'filtered 2017 agro', false);
+
+
+
 
 // build output
 var toExport = inputClassification.select(['classification_2016'])
@@ -70,3 +90,5 @@ Export.image.toAsset({
     'scale': 10,
     'maxPixels': 1e13
 });
+
+*/
