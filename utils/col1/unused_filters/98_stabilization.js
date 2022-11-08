@@ -8,7 +8,7 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var file_in = 'CERRADO_col1_gapfill_v1';
 
 // set metadata to export 
-var version_out = '1';
+var version_out = '10';
 
 // import mapbiomas color ramp
 var vis = {
@@ -18,9 +18,7 @@ var vis = {
 };
 
 // import classification 
-//var inputClassification = ee.Image(root + file_in);
-var inputClassification = ee.ImageCollection('users/dh-conciani/collection7/0_sentinel/c1-general')
-                            .mosaic()
+var inputClassification = ee.Image(root + file_in);
 
 Map.addLayer(inputClassification.select(['classification_2021']), vis, 'data 2021');
 
@@ -89,12 +87,12 @@ Map.addLayer(filtered, {}, 'all', false);
 // export as GEE asset
 Export.image.toAsset({
     'image': filtered,
-    'description': 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_perturbance_v' + version_out,
-    'assetId': root + 'CERRADO_col7_gapfill_incidence_temporal_frequency_spatial_perturbance_v' + version_out,
+    'description': 'CERRADO_sentinel_gapfill_stab_v' + version_out,
+    'assetId': root + 'CERRADO_sentinel_gapfill_stab_v' + version_out,
     'pyramidingPolicy': {
         '.default': 'mode'
     },
     'region': inputClassification.geometry(),
-    'scale': 30,
+    'scale': 10,
     'maxPixels': 1e13
 });
