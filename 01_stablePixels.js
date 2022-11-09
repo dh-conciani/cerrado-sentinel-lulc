@@ -10,7 +10,7 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var file_in = 'CERRADO_sentinel_gapfill_freq_v4';
 
 // set metadata to export 
-var version_out = '8';
+var version_out = '10';
 
 // import mapbiomas color ramp
 var vis = {
@@ -349,6 +349,9 @@ to_filter = to_filter.slice(3,9).addBands(x22.rename('classification_2022')).asi
 
 Map.addLayer(to_filter.select(['classification_2022']), vis, 'post-last-year');
 Map.addLayer(to_filter.select(['classification_2016']), vis, 'post-2016');
+Map.addLayer(to_filter.select(['classification_2017']), vis, 'post-2017');
+Map.addLayer(to_filter.select(['classification_2018']), vis, 'post-2018');
+
 
 
 Export.image.toAsset({
