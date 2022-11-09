@@ -1,187 +1,364 @@
-// generate training msk based in stable pixels from mapbiomas collection 7.0, reference maps and GEDI
+// temporal filter - cerrado biome 
 // dhemerson.costa@ipam.org.br
 
-// set area of interest 
-var CERRADO_simpl = 
-    ee.Geometry.Polygon(
-        [[[-61.58018892468989, -1.8506184138463584],
-          [-61.58018892468989, -26.04174742534789],
-          [-40.6622201746899, -26.04174742534789],
-          [-40.6622201746899, -1.8506184138463584]]], null, false);
+// filter first year, apply temporal-window and filter last year 
 
-// string to identify the output version
-var version_out = '1'; 
+// set root directory 
+var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
-// import the color ramp module from mapbiomas 
-var palettes = require('users/mapbiomas/modules:Palettes.js');
+// set file to be processed
+var file_in = 'CERRADO_sentinel_gapfill_freq_v4';
+
+// set metadata to export 
+var version_out = '8';
+
+// import mapbiomas color ramp
 var vis = {
     'min': 0,
     'max': 49,
-    'palette': palettes.get('classification6')
+    'palette': require('users/mapbiomas/modules:Palettes.js').get('classification6')
 };
 
-// set directory for the output file
-var dirout = 'users/dh-conciani/collection7/0_sentinel/masks/';
+// import collection 7 and select 2013, 2014 and 2015
+var collection = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2')
+                    .slice(28,31);
 
-// brazilian states 
-var assetStates = ee.Image('projects/mapbiomas-workspace/AUXILIAR/estados-2016-raster');
 
-// get classification regions
-var class_reg = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2');
+// import collection 7 (2013, 2014, 2015)
+var inputClassification = collection
+          // and add sentinel collection)
+          .addBands(ee.Image(root + file_in)).aside(print);
 
-// load mapbiomas collection 
-var col = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2');
 
-///////////// import data to mask stable pixels ////////// 
-// PROBIO
-var probioNV = ee.Image('users/felipelenti/probio_cerrado_ras');
-    probioNV = probioNV.eq(1); // select only deforestation (value= 0)
+// define empty classification to receive data
+var classification = ee.Image([]);
 
-// PRODES 00-21
-var prodesNV = ee.Image('users/dh-conciani/basemaps/prodes_cerrado_00-21')
-                  .remap([0, 2, 4, 6, 8, 10, 12, 13, 15, 14, 16, 17, 18, 19, 20, 21, 96, 97, 98, 99, 127],
-                         [1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0]);
-                         // deforestation equals to 1
+// remap all anthopogenic classes only to single-one [21]
+ee.List.sequence({'start': 2013, 'end': 2022}).getInfo()
+    .forEach(function(year_i) {
+      // get year [i]
+      var classification_i = inputClassification.select(['classification_' + year_i])
+        // remap
+       .remap( [3, 4, 5, 9, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
+               [3, 4, 3, 3, 11, 12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 33, 33])
+               .rename('classification_' + year_i)
+               .updateMask(inputClassification.select(['classification_2022']));
+               // insert into classification
+               classification = classification.addBands(classification_i);
+    });
     
-// Inventário Florestal do Estado de São Paulo (World-View <1m)
-var SEMA_SP = ee.Image('projects/mapbiomas-workspace/VALIDACAO/MATA_ATLANTICA/SP_IF_2020_2')
-                .remap([3, 4, 5, 9, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33],
-                       [3, 4, 3, 9, 11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33]);
-                       
-                // select only native vegetation patches
-                var SEMA_bin = SEMA_SP.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
-                                             [1, 1, 0,  1,  1,  0,  0,  0,  0,  0]);
-                // crop only for são paulo's 
-                var SEMA_bin = SEMA_bin.unmask(0).updateMask(assetStates.eq(35));
+print('input', classification);
 
-// Mapa Temático do CAR para áreas úmidas do Estado do Tocantins (RapidEye 2m)
-var SEMA_TO = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR');
-    SEMA_TO = SEMA_TO.remap([11, 50, 128],
-                            [11, 11, 0]);
-                            
-// global tree canopy (Lang et al, 2022) http://arxiv.org/abs/2204.08322
-var tree_canopy = ee.Image('users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1');
-Map.addLayer(tree_canopy, {palette: ['red', 'orange', 'yellow', 'green'], min:0, max:30}, 'tree canopy', false);
+Map.addLayer(classification.select(['classification_2016']), vis, 'pre-2016');
 
-//////// end of products to filter stable samples ////////// 
 
-// remap collection 7
-var colx = ee.Image([]);
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
-  .forEach(function(year_i) {
-    // get year i
-    var x = col.select(['classification_' + year_i])
-              .remap( [3, 4, 5, 11, 12, 29, 15, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-                      [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33])
-                      .rename('classification_' + year_i);
-    // insert into col
-    colx = colx.addBands(x);
-    
-  });
+///////////////////////////// set rules to mask mid years 
+// three years 
+var rule_3yr = function(class_id, year, image) {
+  // get pixels to be mask when the mid year is different of previous and next
+  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id)    // previous
+           .and(image.select(['classification_' + year]).neq(class_id))              // current
+           .and(image.select(['classification_' + String(year + 1)]).eq(class_id));  // next
+           
+  // rectify value in the current year 
+  return image.select(['classification_' + year])
+              .where(to_mask.eq(1), class_id);
+};
+
+// four years 
+var rule_4yr = function(class_id, year, image) {
+  // get pixels to be mask when the mid years is different of previous and next
+  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id)      // previous
+           .and(image.select(['classification_' + year]).neq(class_id))                // current
+           .and(image.select(['classification_' + String(year + 1)]).neq(class_id))    // next
+           .and(image.select(['classification_' + String(year + 2)]).eq(class_id));    // next two
   
-// get pixels that no changed
-var nChanges = colx.reduce(ee.Reducer.countRuns()).subtract(1);
+  // rectify value in the current year
+  return image.select(['classification_' + year])
+              .where(to_mask.eq(1), class_id);
+};
 
-// get stable pixels
-var stable = colx.select('classification_2021').updateMask(nChanges.eq(0)).updateMask(class_reg);
-Map.addLayer(stable, vis, 'stable', false);
+// five years
+var rule_5yr = function(class_id, year, image) {
+  // get pixels to be mask when the mid years is different of previous and next
+  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id)      // previous
+           .and(image.select(['classification_' + year]).neq(class_id))                // current
+           .and(image.select(['classification_' + String(year + 1)]).neq(class_id))    // next
+           .and(image.select(['classification_' + String(year + 2)]).neq(class_id))    // next two
+           .and(image.select(['classification_' + String(year + 3)]).eq(class_id));    // next three
+  
+  // rectify value in the current year
+  return image.select(['classification_' + year])
+              .where(to_mask.eq(1), class_id);
+};
 
-//////////////// process masks to improve stable pixels 
-// mask native vegetation pixels by usign deforestation from PROBIO
-var referenceMapRef = stable;
-                        //.where(probioNV.eq(0)
-                        //.and(referenceMap.eq(3)
-                        //.or(referenceMap.eq(4)
-                        //.or(referenceMap.eq(12)))), 27);
-                        
-// mask native vegetation by using PRODES (from 2000 to 2021)
-var referenceMapRef = referenceMapRef.where(prodesNV.eq(1)
-                        .and(referenceMapRef.eq(3)
-                        .or(referenceMapRef.eq(4)
-                        .or(referenceMapRef.eq(11)
-                        .or(referenceMapRef.eq(12))))), 27);
+////////////////////// set functions to apply rules over the time-series for mid years
+// three years
+var run_3yr = function(image, class_id) {
+  // create recipe with the first year (without previous year)
+  var recipe = image.select(['classification_2013']);
+  // for each year in the window
+  ee.List.sequence({'start': 2014, 'end': 2021}).getInfo()
+      .forEach(function(year_i){
+        // run filter
+        recipe = recipe.addBands(rule_3yr(class_id, year_i, image));
+      }
+    );
+  // insert last years (without suitable next yr to apply filter)
+  recipe = recipe.addBands(image.select(['classification_2022']));
+  
+  return recipe;
+};
 
-// mask using the "Inventario Florestal do Estado de São Paulo
-// erase native vegetation samples that was not native vegetation on reference data
-var referenceMapRef = referenceMapRef.where(SEMA_bin.eq(0)
-                          .and(referenceMapRef.eq(3)
-                          .or(referenceMapRef.eq(4)
-                          .or(referenceMapRef.eq(11)
-                          .or(referenceMapRef.eq(12))))), 27)
-// erase anthropogenic classes from mapbiomas that was classified as natural on reference data
-                        .where(SEMA_bin.eq(1)
-                          .and(referenceMapRef.eq(15)
-                          .or(referenceMapRef.eq(19)
-                          .or(referenceMapRef.eq(21)))), 27);
+// four years
+var run_4yr = function(image, class_id) {
+  // create recipe with the first year (without previous year)
+  var recipe = image.select(['classification_2013']);
+  // for each year in the window
+  ee.List.sequence({'start': 2014, 'end': 2020}).getInfo()
+      .forEach(function(year_i){
+        // run filter
+        recipe = recipe.addBands(rule_4yr(class_id, year_i, image));
+      }
+    );
+  // insert last years (without suitable next yr to apply filter)
+  recipe = recipe.addBands(image.select(['classification_2021']))
+                 .addBands(image.select(['classification_2022']));
+  
+  return recipe;
+};
 
-// remove grassland pixels from sao paulo state
-var referenceMapRef = referenceMapRef.where(referenceMapRef.eq(12).and(assetStates.eq(35)), 27);
+// five years 
+var run_5yr = function(image, class_id) {
+  // create recipe with the first year (without previous year)
+  var recipe = image.select(['classification_2013']);
+  // for each year in the window
+  ee.List.sequence({'start': 2014, 'end': 2019}).getInfo()
+      .forEach(function(year_i){
+        // run filter
+        recipe = recipe.addBands(rule_5yr(class_id, year_i, image));
+      }
+    );
+  // insert last years (without suitable next yr to apply filter)
+  recipe = recipe.addBands(image.select(['classification_2020']))
+                 .addBands(image.select(['classification_2021']))
+                 .addBands(image.select(['classification_2022']));
+  
+  return recipe;
+};
 
-// insert raw grassland from reference into são paulo state
-var referenceMapRef = referenceMapRef.blend(SEMA_SP.updateMask(SEMA_SP.eq(12)));
+////////////////////////////// set rules to avoid deforestations from forest to grassland (or other inconsistent classes)
+// three years
+var rule_3yr_deforestation = function(class_id, year, image) {
+  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id[0])   // previous
+           .and(image.select(['classification_' + year]).eq(class_id[1]))              // current
+           .and(image.select(['classification_' + String(year + 1)]).eq(class_id[2])); // next
+           
+  // when transitions occurs from class_id 0 to 2, passing for the 1, use the value 3
+    return image.select(['classification_' + year])
+              .where(to_mask.eq(1), class_id[3]);
+};
 
-// select  pixels that Mapbiomas and IF-SP agree that are tha same native vegetation class
-    // forest
-var referenceMapRef = referenceMapRef.where(referenceMapRef.eq(3).and(SEMA_SP.eq(3)), 3)
-                                     .where(referenceMapRef.eq(3).and(SEMA_SP.neq(3)), 27)
-                                     .where(referenceMapRef.neq(3).and(SEMA_SP.eq(3)), 3)
-                                     // savanna
-                                     .where(referenceMapRef.eq(4).and(SEMA_SP.eq(4)), 4)
-                                     .where(referenceMapRef.eq(4).and(SEMA_SP.neq(4)), 27)
-                                     .where(referenceMapRef.neq(4).and(SEMA_SP.eq(4)), 4)
-                                     // wetland 
-                                     .where(referenceMapRef.eq(11).and(SEMA_SP.eq(11)), 11)
-                                     .where(referenceMapRef.eq(11).and(SEMA_SP.neq(11)), 11)
-                                     .where(referenceMapRef.neq(11).and(SEMA_SP.eq(11)), 11);
+// four years
+var rule_4yr_deforestation = function(class_id, year, image) {
+  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id[0])   // previous
+           .and(image.select(['classification_' + year]).eq(class_id[1]))      // current
+           .and(image.select(['classification_' + String(year + 1)]).eq(class_id[2]))  // next
+           .and(image.select(['classification_' + String(year + 2)]).eq(class_id[3])); // next
 
-// rect wetalnds from Tocantins state by using SEMA-CAR reference map
-var referenceMapRef = referenceMapRef.where(SEMA_TO.eq(11).and(referenceMapRef.eq(11)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(3)), 3)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(4)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(12)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(27)), 11);
-                                     
-// discard masked pixels
-var referenceMapRef = referenceMapRef.updateMask(referenceMapRef.neq(27));
+           
+  // when transitions occurs from class_id 0 to 3, passing for the 1 or 2, use the value 4
+    return image.select(['classification_' + year])
+              .where(to_mask.eq(1), class_id[4]);
+};
 
-// plot correctred stable samples
-Map.addLayer(referenceMapRef, vis, 'filtered by basemaps', false);
+////////////////////// set functions to apply rules over the time-series for deforestation
+// three years
+var run_3yr_deforestation = function(image, class_id) {
+  // create recipe with the first year (without previous year)
+  var recipe = image.select(['classification_2013']);
+   // for each year in the window
+  ee.List.sequence({'start': 2014, 'end': 2021 }).getInfo()
+      .forEach(function(year_i){
+        // run filter
+        recipe = recipe.addBands(rule_3yr_deforestation(class_id, year_i, image));
+      }
+    );
+  // insert last years (without suitable next yr to apply filter)
+  recipe = recipe.addBands(image.select(['classification_2022'])); 
+  
+  return recipe;
+};
 
-// filter pixels by using GEDi derived tree canopy
-var gedi_filtered = referenceMapRef.where(referenceMapRef.eq(3).and(tree_canopy.lt(8)), 50)
-                                   .where(referenceMapRef.eq(4).and(tree_canopy.lte(2)), 50)
-                                   .where(referenceMapRef.eq(4).and(tree_canopy.gte(12)), 50)
-                                   .where(referenceMapRef.eq(11).and(tree_canopy.gte(15)), 50)
-                                   .where(referenceMapRef.eq(12).and(tree_canopy.gte(6)), 50)
-                                   .where(referenceMapRef.eq(15).and(tree_canopy.gte(8)), 50)
-                                   .where(referenceMapRef.eq(19).and(tree_canopy.gt(7)), 50)
-                                   .where(referenceMapRef.eq(25).and(tree_canopy.gt(0)), 50)
-                                   //.where(referenceMapRef.eq(29).and(tree_canopy.gt(3)), 50)
-                                   .where(referenceMapRef.eq(33).and(tree_canopy.gt(0)), 50);
+// four years
+var run_4yr_deforestation = function(image, class_id) {
+  // create recipe with the first year (without previous year)
+  var recipe = image.select(['classification_2013']);
+   // for each year in the window
+  ee.List.sequence({'start': 2014, 'end': 2020 }).getInfo()
+      .forEach(function(year_i){
+        // run filter
+        recipe = recipe.addBands(rule_4yr_deforestation(class_id, year_i, image));
+      }
+    );
+  // insert last years (without suitable next yr to apply filter)
+  recipe = recipe.addBands(image.select(['classification_2021']))
+                 .addBands(image.select(['classification_2022'])); 
+  
+  return recipe;
+};
 
-// remove masked values
-var stable_pixels = gedi_filtered.updateMask(gedi_filtered.neq(50));
+////////////////////// set functions to apply filter to first and last years
+// first year [2016]
+var run_3yr_first = function(class_id, image) {
+  // get pixels to be masked in the first year when next two were different
+  var to_mask = image.select(['classification_2013']).neq(class_id)
+           .and(image.select(['classification_2014']).eq(class_id))
+           .and(image.select(['classification_2015']).eq(class_id));
+           
+  // rectify value in the first year
+  var first_yr = image.select(['classification_2013'])
+                      .where(to_mask.eq(1), class_id);
+  
+  // add bands of next years
+  ee.List.sequence({'start': 2014, 'end': 2022}).getInfo()
+      .forEach(function(year_i) {
+        first_yr = first_yr.addBands(image.select(['classification_' + year_i]));
+      });
+  
+  return first_yr;
+};
 
-// plot map                               
-Map.addLayer(stable_pixels, vis, 'filtered + basemaps + gedi', false);
+// last year [2021]
+/*
+var run_3yr_last = function(class_id, image) {
+  // get pixels to be masked in the last year when previous two were different
+  var to_mask = image.select(['classification_2022']).neq(class_id)
+           .and(image.select(['classification_2021']).eq(class_id))
+           .and(image.select(['classification_2020']).eq(class_id));
+           
+  // rectify value in the last year
+  var last_yr = image.select(['classification_2022'])
+                      .where(to_mask.eq(1), class_id);
+  
+  // create recipe with time series from first to last [-1]
+  var recipe = ee.Image([]);
+  // insert data into recipe
+  ee.List.sequence({'start': 2016, 'end': 2021}).getInfo()
+      .forEach(function(year_i) {
+        recipe = recipe.addBands(image.select(['classification_' + year_i]));
+      });
+  
+  // insert filtered last year
+  return recipe.addBands(last_yr);
+  
+};
+*/
 
-// remove small fragments
-// get number of connections
-var connections = stable_pixels.connectedPixelCount({'maxSize': 100, 'eightConnected': false});
-// remove packs less than 3 hectare
-var stable_pixels = stable_pixels.updateMask(connections.gte(33));
+//////////////////////// end of functions 
+/////////////////////////////// start of conditionals 
 
-Map.addLayer(stable_pixels, vis, 'filtered + basemaps + gedi + area');
+// create object to be filtered
+var to_filter = classification; 
 
-// explort to workspace asset
+////////////////// apply 'deforestation' filters
+// 4yr
+to_filter = run_4yr_deforestation(to_filter, [3, 12, 12, 12, 21]);
+to_filter = run_4yr_deforestation(to_filter, [3, 12, 12, 21, 21]);
+// 3yr
+to_filter = run_3yr_deforestation(to_filter, [3, 12, 21, 21]);
+to_filter = run_3yr_deforestation(to_filter, [3, 12, 12, 21]);
+to_filter = run_3yr_deforestation(to_filter, [3, 11, 21, 21]);
+to_filter = run_3yr_deforestation(to_filter, [3, 11, 11, 3]);
+to_filter = run_4yr_deforestation(to_filter, [3, 11, 11, 11, 3]);
+to_filter = run_3yr_deforestation(to_filter, [4, 12, 21, 21]);
+to_filter = run_3yr_deforestation(to_filter, [11, 12, 21, 21]);
+to_filter = run_3yr_deforestation(to_filter, [12, 11, 21, 21]);
+
+
+////////////////// filter first year 
+to_filter = run_3yr_first(12, to_filter);
+to_filter = run_3yr_first(3, to_filter);
+to_filter = run_3yr_first(4, to_filter);
+to_filter = run_3yr_first(11, to_filter);
+
+
+////////////// run time window general rules
+///////////////// filter middle years
+var class_ordering = [4, 3, 12, 11, 21, 33, 25];
+
+class_ordering.forEach(function(class_i) {
+  // 5 yr
+  to_filter = run_5yr(to_filter, class_i);
+   // 4 yr
+  to_filter = run_4yr(to_filter, class_i);
+  // 3yr
+   to_filter = run_3yr(to_filter, class_i);
+});
+
+
+
+// plot 
+Map.addLayer(to_filter.select(['classification_2022']), vis, 'pre-last-year-filter');
+
+////////////////// filter last year
+//var filtered = run_3yr_last(21, to_filter);
+
+// insert metadata
+//print('filtered', filtered);
+//to_filter = to_filter.set("version", version_out);
+
+//Map.addLayer(classification.select(['classification_2022']), vis, 'unfiltered 2021');
+//Map.addLayer(filtered.select(['classification_2022']), vis, 'post-last-year-filter');
+
+// avoid that filter runs over small deforestation (as atlantic rainforest)
+// remap native vegetation 
+// create an empty recipe for the remmapd collection
+var remap_col = ee.Image([]);
+// for each year
+ee.List.sequence({'start': 2013, 'end': 2022}).getInfo()
+  .forEach(function(year_i) {
+    // get year [i] clasification
+    var x = to_filter.select(['classification_' + year_i])
+      // perform remap
+      .remap([3, 4, 11, 12, 21, 25, 33],
+             [3, 3,  3,  3, 21, 25, 33])
+             .rename('classification_' + year_i);
+    // put it on recipe
+    remap_col = remap_col.addBands(x);
+  });
+
+
+// get regenrations from 2021 to 2022
+var reg_last = remap_col.select(['classification_2022']).eq(3)
+                  .and(remap_col.select(['classification_2021']).eq(21))
+                  .selfMask();
+
+// get regeneration sizes
+var reg_size = reg_last.selfMask().connectedPixelCount(128,true).reproject('epsg:4326', null, 10);
+
+// get pixels with regenerations lower than 1 ha (100 * 100) and retain 2021 class
+var excludeReg = to_filter.select(['classification_2021'])
+                    .updateMask(reg_size.lte(100).eq(1));
+
+// update 2022 year discarding only small regenerations
+var x22 = to_filter.select(['classification_2022']).blend(excludeReg);
+
+// remove 2022 from time-series and add rectified data
+to_filter = to_filter.slice(3,9).addBands(x22.rename('classification_2022')).aside(print);
+
+Map.addLayer(to_filter.select(['classification_2022']), vis, 'post-last-year');
+Map.addLayer(to_filter.select(['classification_2016']), vis, 'post-2016');
+
+
 Export.image.toAsset({
-    "image": stable_pixels.toInt8(),
-    "description": 'cerrado_stablePixels_col7_v' + version_out,
-    "assetId": dirout + 'cerrado_stablePixels_col7_v'+ version_out,
-    "scale": 30,
-    "pyramidingPolicy": {
+    'image': to_filter,
+    'description': 'CERRADO_sentinel_gapfill_temporal_v' + version_out,
+    'assetId': root +  'CERRADO_sentinel_gapfill_temporal_v' + version_out,
+    'pyramidingPolicy': {
         '.default': 'mode'
     },
-    "maxPixels": 1e13,
-    "region": CERRADO_simpl
-});  
+    'region': classification.geometry(),
+    'scale': 10,
+    'maxPixels': 1e13
+});
