@@ -10,7 +10,7 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var file_in = 'CERRADO_sentinel_gapfill_freq_v4';
 
 // set metadata to export 
-var version_out = '8';
+var version_out = '12';
 
 // import mapbiomas color ramp
 var vis = {
@@ -65,33 +65,6 @@ var rule_3yr = function(class_id, year, image) {
               .where(to_mask.eq(1), class_id);
 };
 
-// four years 
-var rule_4yr = function(class_id, year, image) {
-  // get pixels to be mask when the mid years is different of previous and next
-  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id)      // previous
-           .and(image.select(['classification_' + year]).neq(class_id))                // current
-           .and(image.select(['classification_' + String(year + 1)]).neq(class_id))    // next
-           .and(image.select(['classification_' + String(year + 2)]).eq(class_id));    // next two
-  
-  // rectify value in the current year
-  return image.select(['classification_' + year])
-              .where(to_mask.eq(1), class_id);
-};
-
-// five years
-var rule_5yr = function(class_id, year, image) {
-  // get pixels to be mask when the mid years is different of previous and next
-  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id)      // previous
-           .and(image.select(['classification_' + year]).neq(class_id))                // current
-           .and(image.select(['classification_' + String(year + 1)]).neq(class_id))    // next
-           .and(image.select(['classification_' + String(year + 2)]).neq(class_id))    // next two
-           .and(image.select(['classification_' + String(year + 3)]).eq(class_id));    // next three
-  
-  // rectify value in the current year
-  return image.select(['classification_' + year])
-              .where(to_mask.eq(1), class_id);
-};
-
 ////////////////////// set functions to apply rules over the time-series for mid years
 // three years
 var run_3yr = function(image, class_id) {
@@ -110,103 +83,6 @@ var run_3yr = function(image, class_id) {
   return recipe;
 };
 
-// four years
-var run_4yr = function(image, class_id) {
-  // create recipe with the first year (without previous year)
-  var recipe = image.select(['classification_2013']);
-  // for each year in the window
-  ee.List.sequence({'start': 2014, 'end': 2020}).getInfo()
-      .forEach(function(year_i){
-        // run filter
-        recipe = recipe.addBands(rule_4yr(class_id, year_i, image));
-      }
-    );
-  // insert last years (without suitable next yr to apply filter)
-  recipe = recipe.addBands(image.select(['classification_2021']))
-                 .addBands(image.select(['classification_2022']));
-  
-  return recipe;
-};
-
-// five years 
-var run_5yr = function(image, class_id) {
-  // create recipe with the first year (without previous year)
-  var recipe = image.select(['classification_2013']);
-  // for each year in the window
-  ee.List.sequence({'start': 2014, 'end': 2019}).getInfo()
-      .forEach(function(year_i){
-        // run filter
-        recipe = recipe.addBands(rule_5yr(class_id, year_i, image));
-      }
-    );
-  // insert last years (without suitable next yr to apply filter)
-  recipe = recipe.addBands(image.select(['classification_2020']))
-                 .addBands(image.select(['classification_2021']))
-                 .addBands(image.select(['classification_2022']));
-  
-  return recipe;
-};
-
-////////////////////////////// set rules to avoid deforestations from forest to grassland (or other inconsistent classes)
-// three years
-var rule_3yr_deforestation = function(class_id, year, image) {
-  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id[0])   // previous
-           .and(image.select(['classification_' + year]).eq(class_id[1]))              // current
-           .and(image.select(['classification_' + String(year + 1)]).eq(class_id[2])); // next
-           
-  // when transitions occurs from class_id 0 to 2, passing for the 1, use the value 3
-    return image.select(['classification_' + year])
-              .where(to_mask.eq(1), class_id[3]);
-};
-
-// four years
-var rule_4yr_deforestation = function(class_id, year, image) {
-  var to_mask = image.select(['classification_' + String(year - 1)]).eq(class_id[0])   // previous
-           .and(image.select(['classification_' + year]).eq(class_id[1]))      // current
-           .and(image.select(['classification_' + String(year + 1)]).eq(class_id[2]))  // next
-           .and(image.select(['classification_' + String(year + 2)]).eq(class_id[3])); // next
-
-           
-  // when transitions occurs from class_id 0 to 3, passing for the 1 or 2, use the value 4
-    return image.select(['classification_' + year])
-              .where(to_mask.eq(1), class_id[4]);
-};
-
-////////////////////// set functions to apply rules over the time-series for deforestation
-// three years
-var run_3yr_deforestation = function(image, class_id) {
-  // create recipe with the first year (without previous year)
-  var recipe = image.select(['classification_2013']);
-   // for each year in the window
-  ee.List.sequence({'start': 2014, 'end': 2021 }).getInfo()
-      .forEach(function(year_i){
-        // run filter
-        recipe = recipe.addBands(rule_3yr_deforestation(class_id, year_i, image));
-      }
-    );
-  // insert last years (without suitable next yr to apply filter)
-  recipe = recipe.addBands(image.select(['classification_2022'])); 
-  
-  return recipe;
-};
-
-// four years
-var run_4yr_deforestation = function(image, class_id) {
-  // create recipe with the first year (without previous year)
-  var recipe = image.select(['classification_2013']);
-   // for each year in the window
-  ee.List.sequence({'start': 2014, 'end': 2020 }).getInfo()
-      .forEach(function(year_i){
-        // run filter
-        recipe = recipe.addBands(rule_4yr_deforestation(class_id, year_i, image));
-      }
-    );
-  // insert last years (without suitable next yr to apply filter)
-  recipe = recipe.addBands(image.select(['classification_2021']))
-                 .addBands(image.select(['classification_2022'])); 
-  
-  return recipe;
-};
 
 ////////////////////// set functions to apply filter to first and last years
 // first year [2016]
@@ -261,21 +137,6 @@ var run_3yr_last = function(class_id, image) {
 // create object to be filtered
 var to_filter = classification; 
 
-////////////////// apply 'deforestation' filters
-// 4yr
-to_filter = run_4yr_deforestation(to_filter, [3, 12, 12, 12, 21]);
-to_filter = run_4yr_deforestation(to_filter, [3, 12, 12, 21, 21]);
-// 3yr
-to_filter = run_3yr_deforestation(to_filter, [3, 12, 21, 21]);
-to_filter = run_3yr_deforestation(to_filter, [3, 12, 12, 21]);
-to_filter = run_3yr_deforestation(to_filter, [3, 11, 21, 21]);
-to_filter = run_3yr_deforestation(to_filter, [3, 11, 11, 3]);
-to_filter = run_4yr_deforestation(to_filter, [3, 11, 11, 11, 3]);
-to_filter = run_3yr_deforestation(to_filter, [4, 12, 21, 21]);
-to_filter = run_3yr_deforestation(to_filter, [11, 12, 21, 21]);
-to_filter = run_3yr_deforestation(to_filter, [12, 11, 21, 21]);
-
-
 ////////////////// filter first year 
 to_filter = run_3yr_first(12, to_filter);
 to_filter = run_3yr_first(3, to_filter);
@@ -288,10 +149,6 @@ to_filter = run_3yr_first(11, to_filter);
 var class_ordering = [4, 3, 12, 11, 21, 33, 25];
 
 class_ordering.forEach(function(class_i) {
-  // 5 yr
-  to_filter = run_5yr(to_filter, class_i);
-   // 4 yr
-  to_filter = run_4yr(to_filter, class_i);
   // 3yr
    to_filter = run_3yr(to_filter, class_i);
 });
@@ -345,10 +202,13 @@ var excludeReg = to_filter.select(['classification_2021'])
 var x22 = to_filter.select(['classification_2022']).blend(excludeReg);
 
 // remove 2022 from time-series and add rectified data
-to_filter = to_filter.slice(0,6).addBands(x22.rename('classification_2022'));
+to_filter = to_filter.slice(3,9).addBands(x22.rename('classification_2022')).aside(print);
 
 Map.addLayer(to_filter.select(['classification_2022']), vis, 'post-last-year');
+Map.addLayer(to_filter.select(['classification_2016']), vis, 'post-2016');
+Map.addLayer(to_filter.select(['classification_2017']), vis, 'post-2017');
 Map.addLayer(to_filter.select(['classification_2018']), vis, 'post-2018');
+
 
 
 Export.image.toAsset({
