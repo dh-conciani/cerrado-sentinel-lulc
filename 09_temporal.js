@@ -105,32 +105,6 @@ var run_3yr_first = function(class_id, image) {
   return first_yr;
 };
 
-// last year [2021]
-/*
-var run_3yr_last = function(class_id, image) {
-  // get pixels to be masked in the last year when previous two were different
-  var to_mask = image.select(['classification_2022']).neq(class_id)
-           .and(image.select(['classification_2021']).eq(class_id))
-           .and(image.select(['classification_2020']).eq(class_id));
-           
-  // rectify value in the last year
-  var last_yr = image.select(['classification_2022'])
-                      .where(to_mask.eq(1), class_id);
-  
-  // create recipe with time series from first to last [-1]
-  var recipe = ee.Image([]);
-  // insert data into recipe
-  ee.List.sequence({'start': 2016, 'end': 2021}).getInfo()
-      .forEach(function(year_i) {
-        recipe = recipe.addBands(image.select(['classification_' + year_i]));
-      });
-  
-  // insert filtered last year
-  return recipe.addBands(last_yr);
-  
-};
-*/
-
 //////////////////////// end of functions 
 /////////////////////////////// start of conditionals 
 
@@ -157,16 +131,6 @@ class_ordering.forEach(function(class_i) {
 
 // plot 
 Map.addLayer(to_filter.select(['classification_2022']), vis, 'pre-last-year-filter');
-
-////////////////// filter last year
-//var filtered = run_3yr_last(21, to_filter);
-
-// insert metadata
-//print('filtered', filtered);
-//to_filter = to_filter.set("version", version_out);
-
-//Map.addLayer(classification.select(['classification_2022']), vis, 'unfiltered 2021');
-//Map.addLayer(filtered.select(['classification_2022']), vis, 'post-last-year-filter');
 
 // avoid that filter runs over small deforestation (as atlantic rainforest)
 // remap native vegetation 
@@ -208,8 +172,6 @@ Map.addLayer(to_filter.select(['classification_2022']), vis, 'post-last-year');
 Map.addLayer(to_filter.select(['classification_2016']), vis, 'post-2016');
 Map.addLayer(to_filter.select(['classification_2017']), vis, 'post-2017');
 Map.addLayer(to_filter.select(['classification_2018']), vis, 'post-2018');
-
-
 
 Export.image.toAsset({
     'image': to_filter,
