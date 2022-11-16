@@ -52,7 +52,7 @@ var hand = ee.ImageCollection("users/gena/global-hand/hand-100")
   //Map.addLayer(hand.randomVisualizer());
   
 var tree_canopy = ee.Image('users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1');
-Map.addLayer(tree_canopy, {palette: ['red', 'orange', 'yellow', 'green'], min:0, max:30}, 'tree canopy', false);
+//Map.addLayer(tree_canopy, {palette: ['red', 'orange', 'yellow', 'green'], min:0, max:30}, 'tree canopy', false);
   
 // A digital elevation model.
 var dem = ee.Image('NASA/NASADEM_HGT/001').select('elevation');
@@ -65,7 +65,7 @@ var wetland_to_savanna = ee.Image(1).clip(wetland_to_savanna);
 
 // mask 2
 var savanna_to_forest = ee.Image(1).clip(reg_1_2);
-Map.addLayer(savanna_to_forest);
+//Map.addLayer(savanna_to_forest);
 
 years.forEach(
     function (year) {
