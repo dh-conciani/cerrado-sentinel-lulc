@@ -25,6 +25,9 @@ var theme = { 'type': 'biome', 'name': 'CERRADO' };
 // Defina a fonte produto do dado
 var source = 'ipam';
 
+// set description
+var descr = 'first version, without rocky';
+
 // Todos os anos mapeados na coleção 6
 var years = [
     '2016', '2017', '2018', '2019', '2020', '2021', '2022'
@@ -81,7 +84,7 @@ years.forEach(
             .set('version', outputVersion)
             .set('collection', collectionId)
             .set('source', source)
-            .set('description', 'native9_rocky3');
+            .set('description', descr);
 
         var vis = {
             'min': 0,
