@@ -45,8 +45,9 @@ data$file <- substr(data$file, start= nchar('CERRADO_sentinel_') + 1, stop= 1e2)
 ## plot
 ggplot(data= data, mapping= aes(x= year, y= area/1e6, group= as.factor(file), col= as.factor(file))) +
   #stat_summary(fun='sum', geom= 'line',  alpha= .15, size=3) +
-  stat_summary(fun='sum', geom= 'line') +
-  scale_colour_manual('File', values=c('gray60', 'red')) +
+  stat_summary(fun='sum', geom= 'line', size= 1) +
+  scale_colour_manual(values=c('red', 'blue', 'gray90', 'gray90', 'gray90', 'gray90', 'gray90', 'gray90','gray90', 'gray90', 'gray90', 
+                               'gray90', 'gray90', 'gray90', 'gray90', 'black')) + 
   facet_wrap(~class_id, scales= 'free_y') + 
   theme_bw() +
   ylab('Área (Mha)') +
