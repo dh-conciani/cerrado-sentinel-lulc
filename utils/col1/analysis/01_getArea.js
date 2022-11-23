@@ -8,7 +8,7 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define files to process 
-var asset = [
+//var asset = [
   //root + 'CERRADO_sentinel_gapfill_v1',
   //root + 'CERRADO_sentinel_gapfill_temporal_v2',
   //root + 'CERRADO_sentinel_gapfill_temporal_freq_v2'
@@ -21,10 +21,11 @@ var asset = [
   //root + 'CERRADO_sentinel_gapfill_freq_temporal2x_stab_v88'
   //root + 'CERRADO_sentinel_gapfill_freq_temporal2x_spatial_8'
   //root + 'CERRADO_sentinel_gapfill_freq_temporal2x_v9',
-  root + 'CERRADO_sentinel_gapfill_temporal_v11',
-  root + 'CERRADO_sentinel_gapfill_temporal_v12'
+  //root + 'CERRADO_sentinel_gapfill_temporal_v11',
+  //root + 'CERRADO_sentinel_gapfill_temporal_v12'
 
-  ];
+  //];
+var asset = 'XXXXXXX'
 
 // define classification regions 
 var territory = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2')
