@@ -17,10 +17,10 @@ var sen = ee.ImageCollection('projects/mapbiomas-workspace/COLECAO7-S2/integraca
 
 
 // listar anos para poerformar a análise
-var years = [2016, 2017, 2018, 2019, 2020, 2021];
+var years = [2020, 2021];
 
 // listar classes para performar a análise 
-var classes = [3, 4, 11, 12];
+var classes = [21];
 
 // para cada classe 
 classes.forEach(function(class_i) {
@@ -48,10 +48,14 @@ classes.forEach(function(class_i) {
                           .rename(['classification_' + year_j]);
     // build database
     images = images.addBands(conc).addBands(synt);
+    
+      Map.addLayer(images.select(['territory_' + year_j]), {palette: [
+        'gray', 'blue', 'red'], min:1, max:3}, year_j + ' Agreement - Class ' + class_i);
 
   });
   
   print('classe ' + class_i, images);
+
 
   // change the scale if you need.
   var scale = 10;
