@@ -17,10 +17,10 @@ var sen = ee.ImageCollection('projects/mapbiomas-workspace/COLECAO7-S2/integraca
 
 
 // listar anos para poerformar a análise
-var years = [2020, 2021];
+var years = [2016, 2017, 2018, 2019, 2020, 2021];
 
 // listar classes para performar a análise 
-var classes = [21];
+var classes = [3, 4, 11, 12];
 
 // para cada classe 
 classes.forEach(function(class_i) {
@@ -137,4 +137,3 @@ classes.forEach(function(class_i) {
         fileFormat: 'CSV'
     });
 });
-
