@@ -68,7 +68,7 @@ for (l in 1:length(unique(tab3$class_ref))) {
   for (m in 1:length(unique(x$year))) {
     y <- subset(x, year == unique(x$year)[m])
     y <- aggregate(x=list(area= y$area), by= list(territory= y$territory, year= y$year, class_ref= y$class_ref), FUN='sum')
-    y$perc <- round(y$area/sum(y$area) * 100, digits=1)
+    y$perc <- round(y$area/sum(y$area) * 100, digits=0)
     if (exists('tab4') == FALSE) {
       tab4 <- y
     } else {
@@ -78,16 +78,53 @@ for (l in 1:length(unique(tab3$class_ref))) {
 }
 rm (x, y)
 
+## compute statistical parameters of agreement/disagreement to use as labels 
+for (n in 1:length(unique(tab4$class_ref))) {
+  x <- subset(tab4, class_ref == unique(tab4$class_ref)[n])
+  ## compute labels
+  lab <- 
+    ## get spatial agreement 
+    paste0('Spt. Agree.: ', 'μ ',
+           round(mean(subset(x, territory == 'Agreement')$area/1e6), digits= 1), ' Mha', 
+           ' (', round(mean(subset(x, territory == 'Agreement')$perc), digits= 1), '%', ' ∓ ', 
+           round(sd(subset(x, territory == 'Agreement')$perc), digits=1),'%', ')', 
+           '\n',
+           'Area Disagr.: ', 'μ ',
+           round((mean(subset(x, territory == 'Only Sentinel C1')$area -
+                         subset(x, territory == 'Only Collection 7')$area))/1e6, digits=1), ' Mha',
+           ' (', round(mean(subset(x, territory == 'Only Sentinel C1')$perc -
+                        subset(x, territory == 'Only Collection 7')$perc), digits=1),'%', ' ∓ ', 
+           round(sd(subset(x, territory == 'Only Sentinel C1')$perc -
+                      subset(x, territory == 'Only Collection 7')$perc), digits=1), '%', ')'
+    )
+  
+  ## get only entry that will receive labels
+  x <- subset(x, territory == 'Only Collection 7' & year == 2016)
+  x$label <- lab
+  if (exists('tab5') == FALSE) {
+    tab5 <- x
+  } else {
+    tab5 <- rbind(tab5, x)
+  }
+rm(x, lab)
+}
+
 ## plot 
 ggplot(data= tab3, mapping= aes(x= as.factor(year), y= area/1e6, fill= class_id)) +
   geom_bar(stat='identity') + 
-  scale_fill_manual(values=c('#e974ed', '#006400', '#935132', '#b8af4f', '#fff3bf', '#af2a2a', '#ffd966', '#ff8C00', '#00ff00',
+  scale_fill_manual('MapBiomas Class',
+                    values=c('#e974ed', '#006400', '#935132', '#b8af4f', '#fff3bf', '#af2a2a', '#ffd966', '#ff8C00', '#00ff00',
                              '#0000ff', '#45c2a5')) +
   facet_grid(cols= vars(territory), rows= vars(class_ref),
              scales= 'free_y') +
+  ## use year percents as label (tab4)
   geom_text(data= tab4, mapping=aes(x= as.factor(year), y= area/1e6, 
                                     label= paste0(perc,'%'),
-                                    fill= NULL), size= 3, vjust=-0.3) +
+                                    fill= NULL), size= 3, vjust=-0.1, col= 'black') +
+  ## use parameters as label (tab5)
+  geom_text(data= tab5, mapping= aes(x= as.factor(year), y= area/1e6, 
+                                     label= label, fill= NULL), size=3,
+                                     vjust=-3, col= 'blue', hjust= 0.05) +
   xlab(NULL) +
   ylab('Area (Mha)') + 
   theme_bw() 
