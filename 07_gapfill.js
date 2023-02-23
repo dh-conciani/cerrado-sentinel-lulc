@@ -1,23 +1,17 @@
 // Post-processing - Gapfill filling, uses raw classification as input
 // For clarification write to <dhemerson.costa@ipam.org.br>
 
-// define geometry (raw extent of cerrado)
-var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
-        [[[-42.306314047317365, -1.7207103925816054],
-          [-44.415689047317365, -1.4571401339250152],
-          [-54.259439047317365, -10.451581892159153],
-          [-61.202798422317365, -10.624398320896237],
-          [-61.202798422317365, -14.739254413487872],
-          [-57.775064047317365, -18.027281070807337],
-          [-59.005532797317365, -23.85214541157912],
-          [-48.370767172317365, -25.84584109333063],
-          [-40.548501547317365, -17.52511660076233],
-          [-40.636392172317365, -2.774571568871124]]]);
+var geometry = 
+    ee.Geometry.Polygon(
+        [[[-54.92965566510598, -18.28361240107524],
+          [-54.92965566510598, -22.687019005835637],
+          [-50.59005605573098, -22.687019005835637],
+          [-50.59005605573098, -18.28361240107524]]], null, false);
 
 // define strings to be used as metadata
 // input version
 var dircol6 = 'users/dh-conciani/collection7/0_sentinel/c1-general';
-var version = '1';    
+var version = '2';    
 var bioma = "CERRADO";
 
 // queens case
@@ -26,7 +20,7 @@ var VeightConnected = true;
 // define prefix for the output filename
 var dirout = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 var prefixo_out = 'CERRADO_sentinel_gapfill_v';
-var version_out = '1';     
+var version_out = '2';     
 
 // dewfine year to plot a inspect
 var ano = 2022;
