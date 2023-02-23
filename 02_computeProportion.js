@@ -2,10 +2,10 @@
 // dhemerson.costa@ipam.org.br 
 
 // input metadata
-var version = '1';
+var version = '2';
 
 // define classes to be assessed
-var classes = [3, 4, 11, 12, 15, 19, 21, 25, 33];
+var classes = [3, 4, 9, 11, 12, 15, 19, 21, 25, 33];
 
 // output directory
 var dirout = 'users/dh-conciani/collection7/0_sentinel/sample/area';
@@ -13,20 +13,26 @@ var dirout = 'users/dh-conciani/collection7/0_sentinel/sample/area';
 // cerrado classification regions
 var regionsCollection = ee.FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2');
 
+// get only regions to re-process
+var reg27 = regionsCollection.filterMetadata('mapb', 'equals', 27);
+var reg23 = regionsCollection.filterMetadata('mapb', 'equals', 23);
+regionsCollection = reg27.merge(reg23);
+
+
 // set option (avaliable are 'year' or 'stable')
 var option = 'year' ; 
 
 // if option equal to year
 if (option == 'year') {
   // define year to be used as reference
-  var year = '2000';
+  var year = '2016';
   // load collection 6.0 
   var mapbiomas = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2')
                     .select('classification_'+  year);
 }
 
 if (option == 'stable') {
-  var mapbiomas = ee.Image('users/dh-conciani/collection7/0_sentinel/masks/cerrado_stablePixels_col7_v1');
+  var mapbiomas = ee.Image('users/dh-conciani/collection7/0_sentinel/masks/cerrado_stablePixels_col7_v2');
 }
 
 
@@ -34,8 +40,8 @@ if (option == 'stable') {
 var pixelArea = ee.Image.pixelArea().divide(1000000);
 
 // reclassify following cerrado strategy 
-mapbiomas = mapbiomas.remap([3, 4, 5, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-                            [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33]);
+mapbiomas = mapbiomas.remap([3, 4, 5, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31, 9],
+                            [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33, 9]);
 
 // mapbiomas color pallete
 var palettes = require('users/mapbiomas/modules:Palettes.js');
