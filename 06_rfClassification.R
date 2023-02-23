@@ -6,8 +6,8 @@ library(rgee)
 ee_Initialize()
 
 ## define strings to be used as metadata
-samples_version <- '1'   # input training samples version
-output_version <-  '1'   # output classification version 
+samples_version <- '2'   # input training samples version
+output_version <-  '2'   # output classification version 
 
 ## set the number of bands to be used in classification
 n_bands <- 80
@@ -25,6 +25,11 @@ years <- unique(mosaic$aggregate_array('year')$getInfo())
 
 ## read classification regions (vetor)
 regions_vec <- ee$FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2')
+
+## get only regions to re-process
+reg27 <- regions_vec$filterMetadata('mapb', 'equals', 27)
+reg23 <- regions_vec$filterMetadata('mapb', 'equals', 23);
+regions_vec <- reg27$merge(reg23)
 
 ## define regions to be processed 
 regions_list <- sort(unique(regions_vec$aggregate_array('mapb')$getInfo()))
@@ -87,7 +92,7 @@ for (i in 1:length(regions_list)) {
       addBands(lon_sin)$
       addBands(lon_cos)$
       addBands(hand)
-
+    
     ## limit water samples only to 175 samples (avoid over-estimation)
     water_samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col1_reg', regions_list[i], '_', years[j], '_v', samples_version))$
       filter(ee$Filter$eq("reference", 33))$
@@ -98,7 +103,7 @@ for (i in 1:length(regions_list)) {
     training_ij <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col1_reg', regions_list[i], '_', years[j], '_v', samples_version))$
       filter(ee$Filter$neq("reference", 33))$ ## remove water samples
       merge(water_samples)
-
+    
     ## train classifier
     classifier <- ee$Classifier$smileRandomForest(
       numberOfTrees= n_tree,
