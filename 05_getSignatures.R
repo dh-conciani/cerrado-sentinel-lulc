@@ -10,10 +10,10 @@ ee_Initialize()
 n_bands <- 80 
 
 ## define strings to use as metadata (output)
-version <- "1"     ## version string
+version <- "2"     ## version string
 
 ## define output directory
-dirout <- 'users/dh-conciani/collection7/0_sentinel/training/v1/'
+dirout <- 'users/dh-conciani/collection7/0_sentinel/training/v2/'
 
 ## biome
 biomes <- ee$Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster')
@@ -27,14 +27,20 @@ mosaic <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3')
 ## import classification regions
 regionsCollection <- ee$FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2')
 
+## get only regions to re-process
+reg27 <- regionsCollection$filterMetadata('mapb', 'equals', 27)
+reg23 <- regionsCollection$filterMetadata('mapb', 'equals', 23);
+regionsCollection <- reg27$merge(reg23)
+
 ## import sample points
-samples <- ee$FeatureCollection('users/dh-conciani/collection7/0_sentinel/sample/points/samplePoints_v1')
+samples <- ee$FeatureCollection('users/dh-conciani/collection7/0_sentinel/sample/points/samplePoints_v2')
 
 ## define regions to extract spectral signatures (spatial operator)
 regions_list <- unique(regionsCollection$aggregate_array('mapb')$getInfo())
 
 ## define years to extract spectral signatures (temporal operator)
 years <- unique(mosaic$aggregate_array('year')$getInfo())
+
 
 ## for each region 
 for (i in 1:length(regions_list)) {
@@ -73,7 +79,7 @@ for (i in 1:length(regions_list)) {
     
     ## get the most 80 important bands, using the importance 
     bands <- levels(reorder(importance$band, -importance$mean))[1:n_bands]
-    
+
     ## get only important bands
     mosaic_i <- mosaic_i$select(bands)$
       addBands(lat)$
@@ -85,7 +91,7 @@ for (i in 1:length(regions_list)) {
     samples_ij <- samples$filterBounds(regionsCollection$filterMetadata('mapb', "equals", regions_list[i]))
     print(paste0('number of points: ', samples_ij$size()$getInfo()))      
     
-    ## get training samples
+     ## get training samples
     training_i <- mosaic_i$sampleRegions(collection= samples_ij,
                                          scale= 10,
                                          geometries= TRUE,
