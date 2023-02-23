@@ -1,16 +1,16 @@
-// generate training msk based in stable pixels from mapbiomas collection 7.0, reference maps and GEDI
+// generate training msk based in stable pixels from mapbiomas collection 7.0, reference maps and GEDI (only for problematic regions)
 // dhemerson.costa@ipam.org.br
 
 // set area of interest 
-var CERRADO_simpl = 
+var reg = 
     ee.Geometry.Polygon(
-        [[[-61.58018892468989, -1.8506184138463584],
-          [-61.58018892468989, -26.04174742534789],
-          [-40.6622201746899, -26.04174742534789],
-          [-40.6622201746899, -1.8506184138463584]]], null, false);
+        [[[-54.943523595415975, -18.56364918420516],
+          [-54.943523595415975, -22.624835447308353],
+          [-50.636882970415975, -22.624835447308353],
+          [-50.636882970415975, -18.56364918420516]]], null, false);
 
 // string to identify the output version
-var version_out = '1'; 
+var version_out = '2'; 
 
 // import the color ramp module from mapbiomas 
 var palettes = require('users/mapbiomas/modules:Palettes.js');
@@ -28,6 +28,8 @@ var assetStates = ee.Image('projects/mapbiomas-workspace/AUXILIAR/estados-2016-r
 
 // get classification regions
 var class_reg = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2');
+class_reg = class_reg.updateMask(class_reg.eq(27)).blend(class_reg.updateMask(class_reg.eq(23)));
+
 
 // load mapbiomas collection 
 var col = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2');
@@ -67,12 +69,12 @@ Map.addLayer(tree_canopy, {palette: ['red', 'orange', 'yellow', 'green'], min:0,
 
 // remap collection 7
 var colx = ee.Image([]);
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
+ee.List.sequence({'start': 2016, 'end': 2021}).getInfo()
   .forEach(function(year_i) {
     // get year i
     var x = col.select(['classification_' + year_i])
-              .remap( [3, 4, 5, 11, 12, 29, 15, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-                      [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33])
+              .remap( [3, 4, 5, 11, 12, 29, 15, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31, 9],
+                      [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33, 9])
                       .rename('classification_' + year_i);
     // insert into col
     colx = colx.addBands(x);
@@ -183,5 +185,5 @@ Export.image.toAsset({
         '.default': 'mode'
     },
     "maxPixels": 1e13,
-    "region": CERRADO_simpl
+    "region": reg
 });  
