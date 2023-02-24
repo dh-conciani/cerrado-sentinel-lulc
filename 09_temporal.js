@@ -7,10 +7,10 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // set file to be processed
-var file_in = 'CERRADO_sentinel_gapfill_freq_v4';
+var file_in = 'CERRADO_sentinel_gapfill_freq_v5';
 
 // set metadata to export 
-var version_out = '12';
+var version_out = '13';
 
 // import mapbiomas color ramp
 var vis = {
@@ -40,7 +40,7 @@ ee.List.sequence({'start': 2013, 'end': 2022}).getInfo()
       var classification_i = inputClassification.select(['classification_' + year_i])
         // remap
        .remap( [3, 4, 5, 9, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-               [3, 4, 3, 3, 11, 12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 33, 33])
+               [3, 4, 3, 21, 11, 12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 33, 33])
                .rename('classification_' + year_i)
                .updateMask(inputClassification.select(['classification_2022']));
                // insert into classification
@@ -182,5 +182,4 @@ Export.image.toAsset({
     },
     'region': classification.geometry(),
     'scale': 10,
-    'maxPixels': 1e13
-});
+    'maxPixels': 1e13});
