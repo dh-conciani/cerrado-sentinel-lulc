@@ -40,7 +40,7 @@ ee.List.sequence({'start': 2013, 'end': 2022}).getInfo()
       var classification_i = inputClassification.select(['classification_' + year_i])
         // remap
        .remap( [3, 4, 5, 9, 11, 12, 29, 15, 19, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-               [3, 4, 3, 21, 11, 12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 33, 33])
+               [3, 4, 3, 9, 11, 12, 12, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 25, 25, 25, 25, 33, 33])
                .rename('classification_' + year_i)
                .updateMask(inputClassification.select(['classification_2022']));
                // insert into classification
@@ -120,7 +120,7 @@ to_filter = run_3yr_first(11, to_filter);
 
 ////////////// run time window general rules
 ///////////////// filter middle years
-var class_ordering = [4, 3, 12, 11, 21, 33, 25];
+var class_ordering = [4, 3, 12, 11, 21, 9, 33, 25];
 
 class_ordering.forEach(function(class_i) {
   // 3yr
@@ -142,8 +142,8 @@ ee.List.sequence({'start': 2013, 'end': 2022}).getInfo()
     // get year [i] clasification
     var x = to_filter.select(['classification_' + year_i])
       // perform remap
-      .remap([3, 4, 11, 12, 21, 25, 33],
-             [3, 3,  3,  3, 21, 25, 33])
+      .remap([3, 4, 11, 12, 21, 9, 25, 33],
+             [3, 3,  3,  3, 21, 9, 25, 33])
              .rename('classification_' + year_i);
     // put it on recipe
     remap_col = remap_col.addBands(x);
