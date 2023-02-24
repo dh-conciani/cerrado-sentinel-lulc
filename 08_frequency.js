@@ -5,10 +5,10 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define input file 
-var file_in = 'CERRADO_sentinel_gapfill_v1';
+var file_in = 'CERRADO_sentinel_gapfill_v2';
 
 // define output version 
-var version_out = 4;
+var version_out = 5;
 
 // load classification
 var classification = ee.Image(root + file_in);
@@ -36,10 +36,10 @@ var filterFreq = function(image) {
                                    .add(savanna)
                                    .add(wetland)
                                    .add(grassland)
-                                   .gte(85), 1);
+                                   .gte(50), 1);
                                    
   // stabilize native class when:
-  var filtered = ee.Image(0).where(stable_native.eq(1).and(forest.gte(70)), 3)      // need to occurs in at least 5 years
+  var filtered = ee.Image(0).where(stable_native.eq(1).and(forest.gte(40)), 3)      // need to occurs in at least 5 years
                             .where(stable_native.eq(1).and(wetland.gte(85)), 11)    //need to occurs in at least 6 years
                             .where(stable_native.eq(1).and(savanna.gt(40)), 4)      // if savanna occurs in at least 3 years
                             .where(stable_native.eq(1).and(grassland.gt(50)), 12);  // 
