@@ -36,10 +36,10 @@ var filterFreq = function(image) {
                                    .add(savanna)
                                    .add(wetland)
                                    .add(grassland)
-                                   .gte(50), 1);
+                                   .gte(40), 1);
                                    
   // stabilize native class when:
-  var filtered = ee.Image(0).where(stable_native.eq(1).and(forest.gte(40)), 3)      // need to occurs in at least 5 years
+  var filtered = ee.Image(0).where(stable_native.eq(1).and(forest.gte(1)), 3)      // need to occurs in at least 5 years
                             .where(stable_native.eq(1).and(wetland.gte(85)), 11)    //need to occurs in at least 6 years
                             .where(stable_native.eq(1).and(savanna.gt(40)), 4)      // if savanna occurs in at least 3 years
                             .where(stable_native.eq(1).and(grassland.gt(50)), 12);  // 
