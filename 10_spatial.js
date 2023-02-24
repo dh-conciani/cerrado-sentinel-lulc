@@ -5,16 +5,16 @@
 var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
 
 // define input file 
-var file_in = 'CERRADO_sentinel_gapfill_temporal_v12';
+var file_in = 'CERRADO_sentinel_gapfill_temporal_v13';
 
 // define output version 
-var version_out = 12;
+var version_out = 13;
 
 // read image
 var classification = ee.Image(root + file_in);
 
 // define minimum mapeable area
-var filter_size = 50;
+var filter_size = 120;
 
 // import mapbiomas color ramp
 var vis = {
