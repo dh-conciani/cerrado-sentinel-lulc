@@ -25,7 +25,7 @@ var root = 'users/dh-conciani/collection7/0_sentinel/c1-general-post/';
   //root + 'CERRADO_sentinel_gapfill_temporal_v12'
 
   //];
-var asset = [root + 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v15'];
+var asset = [root + 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v16'];
 
 // define classification regions 
 var territory = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2')
