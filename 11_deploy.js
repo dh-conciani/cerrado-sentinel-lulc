@@ -342,7 +342,7 @@ var palette = require('users/mapbiomas/modules:Palettes.js').get('classification
 
 // Defina seu asset de entrada
 var assetInput = 'users/dh-conciani/collection7/0_sentinel/c1-general-post';
-var file_name = 'CERRADO_sentinel_gapfill_freq_temporal_spatial_12';
+var file_name = 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v16';
 
 // Carregue a sua coleção aqui
 var collection = ee.Image(assetInput + '/' + file_name);
@@ -351,7 +351,7 @@ var collection = ee.Image(assetInput + '/' + file_name);
 var assetOutput = 'projects/mapbiomas-workspace/COLECAO7-S2/classificacao';
 
 // Defina a versão de saída
-var outputVersion = '1';
+var outputVersion = '3';
 
 // Defina o id de lançamento da coleção mapbiomas
 var collectionId = 1;
@@ -363,7 +363,7 @@ var theme = { 'type': 'biome', 'name': 'CERRADO' };
 var source = 'ipam';
 
 // set description
-var descr = 'first version, without rocky';
+var descr = '3th version, with adjustments in reg 23 and 27';
 
 // Todos os anos mapeados na coleção 6
 var years = [
