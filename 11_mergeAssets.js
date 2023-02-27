@@ -7,9 +7,14 @@ var v1 = ee.Image('users/dh-conciani/collection7/0_sentinel/c1-general-post/CERR
 // load version 2 (to correct forestry)
 var v2 = ee.Image('users/dh-conciani/collection7/0_sentinel/c1-general-post/CERRADO_sentinel_gapfill_freq_temporal_spatial_13');
 
+// get regions to be updated
+var class_reg = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2');
+class_reg = class_reg.updateMask(class_reg.eq(27)).blend(class_reg.updateMask(class_reg.eq(23)));
+
+
 var recipe = ee.Image([]);
 ee.List.sequence({'start': 2016, 'end': 2022}).getInfo().forEach(function(year_i) {
-  var v1_i = v1.select(['classification_' + year_i]);
+  var v1_i = v1.select(['classification_' + year_i]).updateMask(class_reg);
   var v2_i = v2.select(['classification_' + year_i]);
   
   //merge
@@ -27,9 +32,10 @@ var vis = {
 
 Map.addLayer(v1.select(['classification_2016']), vis, 'v1');
 Map.addLayer(v2.select(['classification_2016']), vis, 'v2');
+Map.addLayer(recipe.select(['classification_2016']), vis, 'recipe');
 
 // apply spatial filter
-print(recipe)
+print(recipe);
 
 // create an empty recipe
 var filtered = ee.Image([]);
@@ -62,12 +68,23 @@ ee.List.sequence({'start': 2016, 'end': 2022}).getInfo()
 
 // print filtered
 Map.addLayer(filtered.select(['classification_2016']), vis, 'filtered 2016');
-print(filtered)
+print(filtered);
+
+// merge
+var export_x = ee.Image([]);
+ee.List.sequence({'start': 2016, 'end': 2022}).getInfo().forEach(function(year_i) {
+  export_x = export_x.addBands(
+    v1.select(['classification_' + year_i]).blend(filtered.select(['classification_' + year_i]))
+      .rename('classification_' + year_i));
+});
+
+Map.addLayer(export_x.select(['classification_2016']), vis, 'to export');
+print('xx', export_x);
 
 Export.image.toAsset({
-    'image': filtered,
-    'description': 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v15',
-    'assetId': 'users/dh-conciani/collection7/0_sentinel/c1-general-post/' + 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v15',
+    'image': export_x,
+    'description': 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v16',
+    'assetId': 'users/dh-conciani/collection7/0_sentinel/c1-general-post/' + 'CERRADO_sentinel_gapfill_freq_temporal_spatial_revised_v16',
     'pyramidingPolicy': {
         '.default': 'mode'
     },
