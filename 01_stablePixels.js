@@ -1,187 +1,203 @@
-// generate training msk based in stable pixels from mapbiomas collection 7.0, reference maps and GEDI
-// dhemerson.costa@ipam.org.br
+// -- -- -- -- 01_trainingMask
+// generate training mask based in stable pixels from mapbiomas collection 8.0, reference maps and GEDI data
+// dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
-// set area of interest 
-var CERRADO_simpl = 
-    ee.Geometry.Polygon(
-        [[[-61.58018892468989, -1.8506184138463584],
-          [-61.58018892468989, -26.04174742534789],
-          [-40.6622201746899, -26.04174742534789],
-          [-40.6622201746899, -1.8506184138463584]]], null, false);
-
-// string to identify the output version
-var version_out = '1'; 
-
-// import the color ramp module from mapbiomas 
-var palettes = require('users/mapbiomas/modules:Palettes.js');
-var vis = {
-    'min': 0,
-    'max': 49,
-    'palette': palettes.get('classification6')
-};
-
-// set directory for the output file
-var dirout = 'users/dh-conciani/collection7/0_sentinel/masks/';
-
-// brazilian states 
+// Set Cerrado extent in which result will be exported 
+var extent = ee.Geometry.Polygon(
+  [[[-60.935545859442364, -1.734173093722467],
+    [-60.935545859442364, -25.10422789569622],
+    [-40.369139609442364, -25.10422789569622],
+    [-40.369139609442364, -1.734173093722467]]], null, false);
+  
+// Read brazilian states (to be used to filter reference maps)
 var assetStates = ee.Image('projects/mapbiomas-workspace/AUXILIAR/estados-2016-raster');
 
-// get classification regions
-var class_reg = ee.Image('users/dh-conciani/collection7/classification_regions/raster_10m_v2');
+// Set directory for the output file
+var dirout = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/masks/';
 
-// load mapbiomas collection 
-var col = ee.Image('projects/mapbiomas-workspace/public/collection7/mapbiomas_collection70_integration_v2');
+// Set string to identify the output version
+var version_out = '1';
 
-///////////// import data to mask stable pixels ////////// 
-// PROBIO
-var probioNV = ee.Image('users/felipelenti/probio_cerrado_ras');
-    probioNV = probioNV.eq(1); // select only deforestation (value= 0)
+// Read mapbiomas lulc -- collection 8.0
+var collection = ee.Image('projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1');
 
-// PRODES 00-21
-var prodesNV = ee.Image('users/dh-conciani/basemaps/prodes_cerrado_00-21')
-                  .remap([0, 2, 4, 6, 8, 10, 12, 13, 15, 14, 16, 17, 18, 19, 20, 21, 96, 97, 98, 99, 127],
-                         [1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0]);
-                         // deforestation equals to 1
-    
-// Inventário Florestal do Estado de São Paulo (World-View <1m)
-var SEMA_SP = ee.Image('projects/mapbiomas-workspace/VALIDACAO/MATA_ATLANTICA/SP_IF_2020_2')
-                .remap([3, 4, 5, 9, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33],
-                       [3, 4, 3, 9, 11, 12, 12, 15, 19, 19, 19, 21, 25, 25, 25, 25, 33, 25, 25, 25, 25, 33]);
-                       
-                // select only native vegetation patches
-                var SEMA_bin = SEMA_SP.remap([3, 4, 9, 11, 12, 15, 19, 21, 25, 33],
-                                             [1, 1, 0,  1,  1,  0,  0,  0,  0,  0]);
-                // crop only for são paulo's 
-                var SEMA_bin = SEMA_bin.unmask(0).updateMask(assetStates.eq(35));
+// Set function to reclassify collection by ipam-workflow classes 
+var reclassify = function(image) {
+  return image.remap({
+    'from': [3, 4, 5, 6, 49, 11, 12, 32, 29, 50, 13, 15, 19, 39, 20, 40, 62, 41, 36, 46, 47, 35, 48, 23, 24, 30, 25, 33, 31],
+    'to':   [3, 4, 3, 3,  3, 11, 12, 12, 25, 12, 12, 15, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 25, 25, 25, 25, 33, 33]
+    }
+  );
+};
 
-// Mapa Temático do CAR para áreas úmidas do Estado do Tocantins (RapidEye 2m)
-var SEMA_TO = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR');
-    SEMA_TO = SEMA_TO.remap([11, 50, 128],
-                            [11, 11, 0]);
-                            
-// global tree canopy (Lang et al, 2022) http://arxiv.org/abs/2204.08322
-var tree_canopy = ee.Image('users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1');
-Map.addLayer(tree_canopy, {palette: ['red', 'orange', 'yellow', 'green'], min:0, max:30}, 'tree canopy', false);
+// Set function to compute the number of classes over a given time-series 
+var numberOfClasses = function(image) {
+    return image.reduce(ee.Reducer.countDistinctNonNull()).rename('number_of_classes');
+};
 
-//////// end of products to filter stable samples ////////// 
+// Set years to be processed 
+var years = [1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+             2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014,
+             2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023];
 
-// remap collection 7
-var colx = ee.Image([]);
-ee.List.sequence({'start': 1985, 'end': 2021}).getInfo()
-  .forEach(function(year_i) {
-    // get year i
-    var x = col.select(['classification_' + year_i])
-              .remap( [3, 4, 5, 11, 12, 29, 15, 39, 20, 40, 41, 46, 47, 48, 21, 23, 24, 30, 25, 33, 31],
-                      [3, 4, 3, 11, 12, 29, 15, 19, 19, 19, 19, 19, 19, 19, 21, 25, 25, 25, 25, 33, 33])
-                      .rename('classification_' + year_i);
-    // insert into col
-    colx = colx.addBands(x);
-    
-  });
+// Remap collection to ipam-workflow classes 
+var recipe = ee.Image([]);      // build an empty container
+
+// For each year
+years.forEach(function(i) {
   
-// get pixels that no changed
-var nChanges = colx.reduce(ee.Reducer.countRuns()).subtract(1);
+  // select classification for the year i
+  var yi = reclassify(collection.select('classification_' + i)).rename('classification_' + i);
+  
+  // store into container
+  recipe = recipe.addBands(yi);
+});
 
-// get stable pixels
-var stable = colx.select('classification_2021').updateMask(nChanges.eq(0)).updateMask(class_reg);
-Map.addLayer(stable, vis, 'stable', false);
+// Get the number of classes 
+var nClass = numberOfClasses(recipe);
 
-//////////////// process masks to improve stable pixels 
-// mask native vegetation pixels by usign deforestation from PROBIO
-var referenceMapRef = stable;
-                        //.where(probioNV.eq(0)
-                        //.and(referenceMap.eq(3)
-                        //.or(referenceMap.eq(4)
-                        //.or(referenceMap.eq(12)))), 27);
-                        
-// mask native vegetation by using PRODES (from 2000 to 2021)
-var referenceMapRef = referenceMapRef.where(prodesNV.eq(1)
-                        .and(referenceMapRef.eq(3)
-                        .or(referenceMapRef.eq(4)
-                        .or(referenceMapRef.eq(11)
-                        .or(referenceMapRef.eq(12))))), 27);
+// Now, get only the stable pixels (nClass equals to one)
+var stable = recipe.select(0).updateMask(nClass.eq(1));
 
-// mask using the "Inventario Florestal do Estado de São Paulo
-// erase native vegetation samples that was not native vegetation on reference data
-var referenceMapRef = referenceMapRef.where(SEMA_bin.eq(0)
-                          .and(referenceMapRef.eq(3)
-                          .or(referenceMapRef.eq(4)
-                          .or(referenceMapRef.eq(11)
-                          .or(referenceMapRef.eq(12))))), 27)
-// erase anthropogenic classes from mapbiomas that was classified as natural on reference data
-                        .where(SEMA_bin.eq(1)
-                          .and(referenceMapRef.eq(15)
-                          .or(referenceMapRef.eq(19)
-                          .or(referenceMapRef.eq(21)))), 27);
+// Import mapbiomas color schema 
+var vis = {
+    min: 0,
+    max: 62,
+    palette:require('users/mapbiomas/modules:Palettes.js').get('classification8')
+};
 
-// remove grassland pixels from sao paulo state
-var referenceMapRef = referenceMapRef.where(referenceMapRef.eq(12).and(assetStates.eq(35)), 27);
+// Plot stable pixels
+Map.addLayer(stable, vis, '0. MB stable pixels', false);
 
-// insert raw grassland from reference into são paulo state
-var referenceMapRef = referenceMapRef.blend(SEMA_SP.updateMask(SEMA_SP.eq(12)));
 
-// select  pixels that Mapbiomas and IF-SP agree that are tha same native vegetation class
-    // forest
-var referenceMapRef = referenceMapRef.where(referenceMapRef.eq(3).and(SEMA_SP.eq(3)), 3)
-                                     .where(referenceMapRef.eq(3).and(SEMA_SP.neq(3)), 27)
-                                     .where(referenceMapRef.neq(3).and(SEMA_SP.eq(3)), 3)
-                                     // savanna
-                                     .where(referenceMapRef.eq(4).and(SEMA_SP.eq(4)), 4)
-                                     .where(referenceMapRef.eq(4).and(SEMA_SP.neq(4)), 27)
-                                     .where(referenceMapRef.neq(4).and(SEMA_SP.eq(4)), 4)
-                                     // wetland 
-                                     .where(referenceMapRef.eq(11).and(SEMA_SP.eq(11)), 11)
-                                     .where(referenceMapRef.eq(11).and(SEMA_SP.neq(11)), 11)
-                                     .where(referenceMapRef.neq(11).and(SEMA_SP.eq(11)), 11);
+// * * * D E F O R E S T A T I O N   M A S K S
+// 1- PRODES 
+var prodes = ee.Image('projects/ee-sad-cerrado/assets/ANCILLARY/produtos_desmatamento/prodes_cerrado_raster_2000_2023_v20231116')
+  // convert annual deforestation to a binary raster in which value 1 represents cummulative deforestation 
+  .remap({
+    'from': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 100],
+    'to':   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0]
+  }
+);
 
-// rect wetalnds from Tocantins state by using SEMA-CAR reference map
-var referenceMapRef = referenceMapRef.where(SEMA_TO.eq(11).and(referenceMapRef.eq(11)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(3)), 3)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(4)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(12)), 11)
-                                     .where(SEMA_TO.eq(11).and(referenceMapRef.eq(27)), 11);
-                                     
-// discard masked pixels
-var referenceMapRef = referenceMapRef.updateMask(referenceMapRef.neq(27));
+// Erase stable pixels of native vegetation that were classified as deforestation by PRODES 
+stable = stable.where(prodes.eq(1).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
+Map.addLayer(stable, vis, '1. Filtered by PRODES', false);
 
-// plot correctred stable samples
-Map.addLayer(referenceMapRef, vis, 'filtered by basemaps', false);
+// 2- Cerrado Deforestation Alert System (SAD Cerrado)
+var sad = ee.Image(1).clip(
+  ee.FeatureCollection('projects/ee-sad-cerrado/assets/PUBLIC/SAD_CERRADO_ALERTAS')
+    // add 2021 data, from another asset  
+    .merge(ee.FeatureCollection('projects/ee-sad-cerrado/assets/WARNINGS/SAD_CERRADO_ALERTAS_2021'))
+    // filter to retain only deforestations at the end of 2023 
+    .filterMetadata('detect_mon', 'less_than', 2401)
+  );
+  
+// Erase stable pixels of native vegetation that were classified as deforestation by SAD 
+stable = stable.where(sad.eq(1).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
+Map.addLayer(stable, vis, '2. Filtered by SAD', false);
 
-// filter pixels by using GEDi derived tree canopy
-var gedi_filtered = referenceMapRef.where(referenceMapRef.eq(3).and(tree_canopy.lt(8)), 50)
-                                   .where(referenceMapRef.eq(4).and(tree_canopy.lte(2)), 50)
-                                   .where(referenceMapRef.eq(4).and(tree_canopy.gte(12)), 50)
-                                   .where(referenceMapRef.eq(11).and(tree_canopy.gte(15)), 50)
-                                   .where(referenceMapRef.eq(12).and(tree_canopy.gte(6)), 50)
-                                   .where(referenceMapRef.eq(15).and(tree_canopy.gte(8)), 50)
-                                   .where(referenceMapRef.eq(19).and(tree_canopy.gt(7)), 50)
-                                   .where(referenceMapRef.eq(25).and(tree_canopy.gt(0)), 50)
-                                   //.where(referenceMapRef.eq(29).and(tree_canopy.gt(3)), 50)
-                                   .where(referenceMapRef.eq(33).and(tree_canopy.gt(0)), 50);
+// 3 - MapBiomas Alert (MB Alerta)
+var mb_alerta = ee.Image('projects/ee-sad-cerrado/assets/ANCILLARY/produtos_desmatamento/mb_alertas_up_to_2023_020524');
 
-// remove masked values
-var stable_pixels = gedi_filtered.updateMask(gedi_filtered.neq(50));
+// Erase stable pixels of native vegetation that were classified as deforestation by MB Alerta 
+stable = stable.where(mb_alerta.gte(1).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
+Map.addLayer(stable, vis, '3. Filtered by MB Alerta', false);
 
-// plot map                               
-Map.addLayer(stable_pixels, vis, 'filtered + basemaps + gedi', false);
 
-// remove small fragments
-// get number of connections
-var connections = stable_pixels.connectedPixelCount({'maxSize': 100, 'eightConnected': false});
-// remove packs less than 3 hectare
-var stable_pixels = stable_pixels.updateMask(connections.gte(33));
+// * * * R E F E R E N C E    M A P     M A S K S
+// 4- Forest Inventory of the State of São Paulo
+var sema_sp = ee.Image('projects/mapbiomas-workspace/MAPA_REFERENCIA/MATA_ATLANTICA/SP_IF_2020_2')
+  .remap({
+    'from': [3, 4, 5, 9, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 29, 30, 31, 32, 33],
+    'to':   [3, 4, 3, 0, 11, 12, 12, 0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+  }
+);
 
-Map.addLayer(stable_pixels, vis, 'filtered + basemaps + gedi + area');
+// Erase stable pixels of native vegetation that wasn't classifeid as in the SEMA SP map
+stable = stable.where(sema_sp.eq(0).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
 
-// explort to workspace asset
+// Remove grasslands from São Paulo state
+stable = stable.where(stable.eq(12).and(assetStates.eq(35)), 27);
+
+// Apply rules for native vegetation
+stable = stable
+  // Forest Formation
+  .where(stable.eq(3).and(sema_sp.neq(3)), 27)
+  .where(stable.neq(3).and(sema_sp.eq(3)), 3)
+  // Savanna Formation
+  .where(stable.eq(4).and(sema_sp.neq(4)), 27)
+  .where(stable.neq(4).and(sema_sp.eq(4)), 4)
+  // Grassland
+  .where(stable.gte(1).and(sema_sp.eq(12)), 12)
+  // Wetland
+  .where(stable.neq(11).and(sema_sp.eq(11)), 11);
+
+Map.addLayer(stable, vis, '4. Filtered by SEMA SP', false);
+
+// 5- CAR Thematic Mapping for the State of Tocantins
+var sema_to = ee.Image('users/dh-conciani/basemaps/TO_Wetlands_CAR')
+  .remap({
+    'from': [11, 50, 128],
+    'to':   [11, 11, 0]
+  }
+);
+
+// Replace stable pixels of savanna and grassland that was wetland in the reference map by wetland
+stable = stable.where(sema_to.eq(11).and(stable.eq(4).or(stable.eq(12).or(stable.eq(27)))), 11);
+Map.addLayer(stable, vis, '5. Filtered by SEMA TO', false);
+
+// 6- Land use and cover map of Distrito Federal
+var sema_df = ee.Image('projects/barbaracosta-ipam/assets/base/DF_cobertura-do-solo_2019_img')
+  // get only native vegetation
+  .remap({
+    'from': [3, 4, 11, 12],
+    'to':   [3, 4, 11, 12],
+    'defaultValue': 0
+  }
+);
+
+// Erase stable pixels of native vegetation that wasn't in the SEMA DF map
+stable = stable.where(sema_df.eq(0).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
+Map.addLayer(stable, vis, '6. Filtered by SEMA DF', false);
+
+// 7- Mapping 'Campos de Murundus' in the State of Goiás 
+var sema_go = ee.Image(11).clip(
+  ee.FeatureCollection('users/dh-conciani/basemaps/SEMA_GO_Murundus')
+);
+
+// Replace stable pixels of savanna and grassland that was wetland in the reference map by wetland
+stable = stable.where(sema_go.eq(11).and(stable.eq(4).or(stable.eq(12).or(stable.eq(27)))), 11);
+Map.addLayer(stable, vis, '7. Filtered by SEMA GO', false);
+
+
+// * * * G E D I    B A S E D    M A S K 
+// 8- Canopy heigth (in meters)
+// From Lang et al., 2023 (https://www.nature.com/articles/s41559-023-02206-6)
+var canopy_heigth = ee.Image('users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1');
+
+// Filter stable pixels by using field-based rules per vegetation type 
+stable = stable.where(stable.eq(3).and(canopy_heigth.lt(4)), 50)
+               .where(stable.eq(4).and(canopy_heigth.lte(2)), 50)
+               .where(stable.eq(4).and(canopy_heigth.gte(8)), 50)
+               .where(stable.eq(11).and(canopy_heigth.gte(15)), 50)
+               .where(stable.eq(12).and(canopy_heigth.gte(6)), 50)
+               .where(stable.eq(15).and(canopy_heigth.gte(8)), 50)
+               .where(stable.eq(19).and(canopy_heigth.gt(7)), 50)
+               .where(stable.eq(25).and(canopy_heigth.gt(0)), 50)
+               .where(stable.eq(33).and(canopy_heigth.gt(0)), 50);
+
+Map.addLayer(stable, vis, '8. Filtered by GEDI', false);
+
+// Export as GEE asset
 Export.image.toAsset({
-    "image": stable_pixels.toInt8(),
-    "description": 'cerrado_stablePixels_col7_v' + version_out,
-    "assetId": dirout + 'cerrado_stablePixels_col7_v'+ version_out,
+    "image": stable.toInt8(),
+    "description": 'cerrado_trainingMask_1985_2023_v' + version_out,
+    "assetId": dirout + 'cerrado_trainingMask_1985_2023_v'+ version_out,
     "scale": 30,
     "pyramidingPolicy": {
         '.default': 'mode'
     },
     "maxPixels": 1e13,
-    "region": CERRADO_simpl
+    "region": extent
 });  
