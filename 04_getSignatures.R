@@ -46,7 +46,7 @@ mosaic <- ee$ImageCollection('projects/mapbiomas-mosaics/assets/SENTINEL/BRAZIL/
 regionsCollection <- ee$FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2')
 
 ## import sample points
-samples <- ee$FeatureCollection(paste0('users/dh-conciani/collection9/sample/points/samplePoints_v', version_in))
+samples <- ee$FeatureCollection(paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/sample/points/samplePoints_v', version_in))
 
 ## time since last fire
 fire_age <- ee$Image('users/barbarasilvaIPAM/collection8/masks/fire_age_v2')
@@ -55,9 +55,6 @@ fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('cla
 
 ## get bandnames to be extracted
 bands <- mosaic$first()$bandNames()$getInfo()
-
-## remove bands with 'cloud' or 'shade' into their names
-bands <- bands[- which(sapply(strsplit(bands, split='_', fixed=TRUE), function(x) (x[1])) == 'cloud')]
 
 ## process each missing file 
 for(m in 1:length(missing)) {
@@ -88,52 +85,109 @@ for(m in 1:length(missing)) {
   
   ## get the landsat mosaic for the current year 
   mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i))$
-    filterMetadata('satellite', 'equals', subset(rules, year == year_i)$sensor)$
     filterBounds(region_i)$
     mosaic()$select(bands)
   
-  ## if the year is greater than 1986, get the 3yr NDVI amplitude
-  if (year_i > 1986) {
-    print('Computing NDVI Amplitude (3yr)')
-    ## get previous year mosaic 
-    mosaic_i1 <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i) - 1)$
-      filterMetadata('satellite', 'equals', subset(rules, year == year_i)$sensor_past1)$
-      mosaic()$select(c('ndvi_median_dry','ndvi_median_wet'))$clip(region_i)
-    ## get previous 2yr mosaic 
-    mosaic_i2 <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i) - 2)$
-      filterMetadata('satellite', 'equals', subset(rules, year == year_i)$sensor_past2)$
-      mosaic()$select(c('ndvi_median_dry','ndvi_median_wet'))$clip(region_i)
-    
-    ## compute the minimum NDVI over dry season 
-    min_ndvi <- ee$ImageCollection$fromImages(c(mosaic_i$select('ndvi_median_dry'),
-                                                mosaic_i1$select('ndvi_median_dry'),
-                                                mosaic_i2$select('ndvi_median_dry')))$min()
-    
-    ## compute the mmaximum NDVI over wet season 
-    max_ndvi <- ee$ImageCollection$fromImages(c(mosaic_i$select('ndvi_median_wet'),
-                                                mosaic_i1$select('ndvi_median_wet'),
-                                                mosaic_i2$select('ndvi_median_wet')))$max()
-    
-    ## get the amplitude
-    amp_ndvi <- max_ndvi$subtract(min_ndvi)$rename('amp_ndvi_3yr')$clip(region_i);
-    
-    ## get the time since last fire
-    fire_age_i <- fire_age$select(paste0('classification_', year_i))$rename('fire_age')$clip(region_i)
+  ## compute spectrla indexes
+  ## metrics to be considered for indexes
+  indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
+  
+  ## function to retain bandnames for the indexes
+  getBands <- function(metrics, band) {
+    return(
+      grep(paste(metrics, collapse = "|"), 
+           grep(band, bands, value = TRUE, perl = TRUE), value = TRUE)
+    )
   }
   
-  ## if the year[j] is lower than 1987, get null image as amp
-  if (year_i < 1987){
-    amp_ndvi <- ee$Image(0)$rename('amp_ndvi_3yr')$clip(region_i)
-    fire_age_i <- ee$Image(5)$rename('fire_age')$clip(region_i)
+  ## get bandnames
+  blue <- getBands(indexMetrics, 'blue')
+  green <- getBands(indexMetrics, 'green(?!.*texture)')
+  red <- getBands(indexMetrics, 'red(?!_edge)')
+  nir <- getBands(indexMetrics, 'nir')
+  swir1 <- getBands(indexMetrics, 'swir1')
+  swir2 <- getBands(indexMetrics, 'swir2')
+  
+  getNDVI <- function(image) {
+    return(
+      (image$select(nir)$subtract(image$select(red)))$
+        divide(image$select(nir)$add(image$select(red)))$
+        rename(paste0('ndvi_', indexMetrics))
+    )
   }
   
+  getNDWI <- function(image) {
+    return(
+      (image$select(nir)$subtract(image$select(swir1)))$
+        divide(image$select(nir)$add(image$select(swir1)))$
+        rename(paste0('ndwi_', indexMetrics))
+    )
+  }
+  
+  getCAI <- function(image) {
+    return(
+      image$select(swir2)$divide(image$select(swir1))$
+        rename(paste0('cai_', indexMetrics))
+    )
+  }
+  
+  getGCVI <- function(image) {
+    return(
+      (image$select(nir)$divide(image$select(green)))$subtract(1)$
+        rename(paste0('gcvi_', indexMetrics))
+    )
+  }
+  
+  getPRI <- function(image) {
+    return(
+      (image$select(blue)$subtract(image$select(green)))$
+        divide(image$select(blue)$add(image$select(green)))$
+        rename(paste0('pri_', indexMetrics))
+    )
+  }
+  
+  getEVI2 <- function(image) {
+    return(
+      ((image$select(nir)$subtract(image$select(red)))$multiply(2.5))$divide(
+        image$select(nir)$add(2.4)$multiply(image$select(red)$add(1)))$
+        rename(paste0('evi2_', indexMetrics))
+      
+    )
+  }
+  
+  getSAVI <- function(image) {
+    return(
+      ((image$select(nir)$subtract(image$select(red)))$multiply(1.5))$
+        divide(image$select(nir)$add(0.5)$add(image$select(red)))$
+        rename(paste0('savi_', indexMetrics))
+    )
+  }
+  
+  getIndexes <- function(image) {
+    return(
+      getNDVI(image)$addBands(
+        getNDWI(image)$addBands(
+          getCAI(image)$addBands(
+            getGCVI(image)$addBands(
+              getPRI(image)$addBands(
+                getEVI2(image)$addBands(
+                  getSAVI(image)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  }
+  
+
   ## bind mapbiomas mosaic and auxiliary bands
   mosaic_i <- mosaic_i$addBands(lat)$
     addBands(lon_sin)$
     addBands(lon_cos)$
     addBands(hand)$
-    addBands(amp_ndvi)$
-    addBands(fire_age_i)$
+    addBands(fire_age$select(paste0('classification_', year_i))$clip(region_i))$
     addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))
   
   ## subset sample points for the region 
