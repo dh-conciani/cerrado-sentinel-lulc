@@ -181,14 +181,18 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## add index
+  indexImage <- getIndexes(mosaic_i)
 
   ## bind mapbiomas mosaic and auxiliary bands
   mosaic_i <- mosaic_i$addBands(lat)$
     addBands(lon_sin)$
     addBands(lon_cos)$
     addBands(hand)$
-    addBands(fire_age$select(paste0('classification_', year_i))$clip(region_i))$
-    addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))
+    addBands(fire_age$select(paste0('classification_', year_i))$clip(region_i)$rename('fire_age'))$
+    addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))$
+    addBands(indexImage)
+  
   
   ## subset sample points for the region 
   samples_ij <- samples$filterBounds(regionsCollection$filterMetadata('mapb', "equals", region_list))
