@@ -31,7 +31,7 @@ green <- getBands(indexMetrics, 'green(?!.*texture)')
 red <- getBands(indexMetrics, 'red(?!_edge)')
 nir <- getBands(indexMetrics, 'nir')
 swir1 <- getBands(indexMetrics, 'swir1')
-swir1 <- getBands(indexMetrics, 'swir2')
+swir2 <- getBands(indexMetrics, 'swir2')
 
 getNDVI <- function(image) {
   return(
@@ -41,19 +41,73 @@ getNDVI <- function(image) {
   )
 }
 
+getNDWI <- function(image) {
+  return(
+    (image$select(nir)$subtract(image$select(swir1)))$
+      divide(image$select(nir)$add(image$select(swir1)))$
+      rename(paste0('ndwi_', indexMetrics))
+  )
+}
 
+getCAI <- function(image) {
+  return(
+    image$select(swir2)$divide(image$select(swir1))$
+      rename(paste0('cai_', indexMetrics))
+  )
+}
 
+getGCVI <- function(image) {
+  return(
+    (image$select(nir)$divide(image$select(green)))$subtract(1)$
+      rename(paste0('gcvi_', indexMetrics))
+  )
+}
 
+getPRI <- function(image) {
+  return(
+    (image$select(blue)$subtract(image$select(green)))$
+      divide(image$select(blue)$add(image$select(green)))$
+      rename(paste0('pri_', indexMetrics))
+  )
+}
 
+getEVI2 <- function(image) {
+   return(
+     ((image$select(nir)$subtract(image$select(red)))$multiply(2.5))$divide(
+       image$select(nir)$add(2.4)$multiply(image$select(red)$add(1)))$
+       rename(paste0('evi2_', indexMetrics))
+     
+   )
+ }
 
-a <- getNDVI(mosaic)
-a$bandNames()$getInfo()
-Map$addLayer(a$select('ndvi_median'))
-red_image$bandNames()$getInfo()
-Map$addLayer(red)
+getSAVI <- function(image) {
+  return(
+    ((image$select(nir)$subtract(image$select(red)))$multiply(1.5))$
+      divide(image$select(nir)$add(0.5)$add(image$select(red)))$
+      rename(paste0('savi_', indexMetrics))
+  )
+}
 
+getIndexes <- function(image) {
+  return(
+    getNDVI(image)$addBands(
+      getNDWI(image)$addBands(
+        getCAI(image)$addBands(
+          getGCVI(image)$addBands(
+            getPRI(image)$addBands(
+              getEVI2(image)$addBands(
+                getSAVI(image)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
 
-indexMetrics
+indexImage <- getIndexes(mosaic)
 
-#green <- mosaic$select(grep(paste(indexMetrics, collapse = "|"), 
-#                          grep("green(?!.*texture)", bandnames, value = TRUE, perl = TRUE), value = TRUE))
+## merge with collection
+mosaic <- mosaic$addBands(indexImage)
+mosaic$bandNames()$getInfo()
