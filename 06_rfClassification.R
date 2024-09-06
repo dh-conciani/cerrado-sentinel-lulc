@@ -124,6 +124,9 @@ for (i in 1:length(regions_list)) {
       filterBounds(region_i_vec)$
       mosaic()
     
+    ## get bands
+    bands <- mosaic_i$bandNames()$getInfo()
+    
     ## metrics to be considered for indexes
     indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
     
@@ -299,7 +302,7 @@ for (i in 1:length(regions_list)) {
       image= toExport,
       description= file_name,
       assetId= paste0(output_asset, file_name),
-      scale= 30,
+      scale= 10,
       maxPixels= 1e13,
       pyramidingPolicy= list('.default' = 'mode'),
       region= region_i_ras$geometry()
