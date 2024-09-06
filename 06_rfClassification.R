@@ -1,4 +1,4 @@
-## Run smileRandomForest classifier - Mapbiomas Sentinel Collection 1.0
+## Run smileRandomForest classifier - Mapbiomas Sentinel 
 ## For clarification, write to <dhemerson.costa@ipam.org.br> 
 
 ## import libraries
@@ -6,19 +6,15 @@ library(rgee)
 ee_Initialize()
 
 ## define strings to be used as metadata
-samples_version <- '1'   # input training samples version
-output_version <-  '1'   # output classification version 
-
-## set the number of bands to be used in classification
-n_bands <- 80
+samples_version <- '2'   # input training samples version
+output_version <-  '2'   # output classification version 
 
 ## define output asset
-output_asset <- 'users/dh-conciani/collection7/0_sentinel/c1-general/'
+output_asset <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/generalMap/'
 
-## read sentinel-2 mosaic
-mosaic <- ee$ImageCollection('projects/nexgenmap/MapBiomas2/SENTINEL/mosaics-3')$
-  filter(ee$Filter$eq('version', '3'))$
-  filter(ee$Filter$eq('biome', 'CERRADO'))
+## define mosaic input 
+mosaic <- ee$ImageCollection('projects/mapbiomas-mosaics/assets/SENTINEL/BRAZIL/mosaics-3')$
+  filterMetadata('biome', 'equals', 'CERRADO')
 
 ## define years to be classified
 years <- unique(mosaic$aggregate_array('year')$getInfo())
@@ -30,7 +26,7 @@ regions_vec <- ee$FeatureCollection('users/dh-conciani/collection7/classificatio
 regions_list <- sort(unique(regions_vec$aggregate_array('mapb')$getInfo()))
 
 ### training samples (prefix string)
-training_dir <- 'users/dh-conciani/collection7/0_sentinel/training/'
+training_dir <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/'
 
 ### classification regions (imageCollection, one region per image)
 regions_ic <- 'users/dh-conciani/collection7/classification_regions/eachRegion_v2_10m/'
@@ -87,7 +83,7 @@ for (i in 1:length(regions_list)) {
       addBands(lon_sin)$
       addBands(lon_cos)$
       addBands(hand)
-
+    
     ## limit water samples only to 175 samples (avoid over-estimation)
     water_samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col1_reg', regions_list[i], '_', years[j], '_v', samples_version))$
       filter(ee$Filter$eq("reference", 33))$
@@ -98,7 +94,7 @@ for (i in 1:length(regions_list)) {
     training_ij <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col1_reg', regions_list[i], '_', years[j], '_v', samples_version))$
       filter(ee$Filter$neq("reference", 33))$ ## remove water samples
       merge(water_samples)
-
+    
     ## train classifier
     classifier <- ee$Classifier$smileRandomForest(
       numberOfTrees= n_tree,
