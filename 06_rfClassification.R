@@ -121,12 +121,8 @@ for (i in 1:length(regions_list)) {
     
     ## get the sentinel  for the current year 
     mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(years_ij[j]))$
-    #$
-    #  filterBounds(region_i_vec)$
-    #  mosaic()
-    
-    ## compute indexes
-    mosaic_i$bandNames()$getInfo()
+      filterBounds(region_i_vec)$
+      mosaic()
     
     ## metrics to be considered for indexes
     indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
@@ -220,89 +216,17 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ## Get the landsat mosaic for the current year 
-    mosaic_i <- mosaic$filterMetadata('year', 'equals', years_ij[j])$
-      filterMetadata('satellite', 'equals', subset(rules, year == years_ij[j])$sensor)$
-      mosaic()$
-      updateMask(region_i_ras)$   # filter for the region
-      select(bands)               # select only relevant bands
-    
-    ## Compute the NDVI amplitude, following mosaic rules 
-    ## If the year is greater than 1986, get the 3yr NDVI amplitude
-    if (years_ij[j] > 1986) {
-      ##print('Computing NDVI Amplitude (3yr)')
-      
-      ## Get previous year mosaic 
-      mosaic_i1 <- mosaic$filterMetadata('year', 'equals', years_ij[j] - 1)$
-        filterMetadata('satellite', 'equals', subset(rules, year == years_ij[j])$sensor_past1)$
-        mosaic()$
-        select(c('ndvi_median_dry','ndvi_median_wet'))$
-        updateMask(region_i_ras)
-      
-      ## Get previous 2yr mosaic 
-      mosaic_i2 <- mosaic$filterMetadata('year', 'equals', years_ij[j] - 2)$
-        filterMetadata('satellite', 'equals', subset(rules, year == years_ij[j])$sensor_past2)$
-        mosaic()$
-        select(c('ndvi_median_dry','ndvi_median_wet'))$
-        updateMask(region_i_ras)
-      
-      ## Compute the minimum NDVI over dry season 
-      min_ndvi <- ee$ImageCollection$fromImages(c(mosaic_i$select('ndvi_median_dry'),
-                                                  mosaic_i1$select('ndvi_median_dry'),
-                                                  mosaic_i2$select('ndvi_median_dry')))$min()
-      
-      ## Compute the maximum NDVI over wet season 
-      max_ndvi <- ee$ImageCollection$fromImages(c(mosaic_i$select('ndvi_median_wet'),
-                                                  mosaic_i1$select('ndvi_median_wet'),
-                                                  mosaic_i2$select('ndvi_median_wet')))$max()
-      
-      ## Get the amplitude
-      amp_ndvi <- max_ndvi$subtract(min_ndvi)$
-        rename('amp_ndvi_3yr')$
-        updateMask(region_i_ras)
-      
-      ## Get the time since last fire
-      fire_age_i <- fire_age$select(paste0('classification_',years_ij[j]))$
-        rename('fire_age')$
-        updateMask(region_i_ras)
-      
-    }
-    
-    ## If the year[j] is lower than 1987, get null image as amplitude
-    if (years_ij[j] < 1987){
-      amp_ndvi <- ee$Image(0)$
-        rename('amp_ndvi_3yr')$
-        updateMask(region_i_ras)
-      
-      fire_age_i <- ee$Image(5)$
-        rename('fire_age')$
-        updateMask(region_i_ras)
-      
-    }
+    indexImage <- getIndexes(mosaic_i)
     
     ## Join the mapbiomas mosaic with the auxiliary bands
     mosaic_i <- mosaic_i$addBands(lat)$
       addBands(lon_sin)$
       addBands(lon_cos)$
       addBands(hand)$
-      addBands(amp_ndvi)$
-      addBands(fire_age_i)
+      addBands(fire_age$select(paste0('classification_', years_ij[j]))$clip(region_i_vec)$rename('fire_age'))$
+      addBands(indexImage)
     
+      
     ## Limit water samples only to 175 samples (avoid over-estimation)
     water_samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))$
       filter(ee$Filter$eq("reference", 33))$
@@ -356,7 +280,8 @@ for (i in 1:length(regions_list)) {
     )$rename('classification')
     
     ## Include classification as a band 
-    toExport <- classificationImage$addBands(probabilities)
+    toExport <- classificationImage
+      #$addBands(probabilities)
     
     ## Set properties
     toExport <- toExport$
