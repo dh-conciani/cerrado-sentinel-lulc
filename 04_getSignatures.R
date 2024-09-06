@@ -200,7 +200,7 @@ for(m in 1:length(missing)) {
   
   ## get training samples
   training_i <- mosaic_i$sampleRegions(collection= samples_ij,
-                                       scale= 30,
+                                       scale= 10,
                                        geometries= TRUE,
                                        tileScale= 2)
   
