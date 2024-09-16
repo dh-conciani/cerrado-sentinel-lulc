@@ -44,11 +44,27 @@ getNDVI <- function(image) {
   )
 }
 
+getNDBI <- function(image) {
+  return(
+    (image$select(swir1)$subtract(image$select(nir)))$
+      divide(image$select(swir1)$add(image$select(nir)))$
+      rename(paste0('ndbi_', indexMetrics))
+  )
+}
+
 getNDWI <- function(image) {
   return(
     (image$select(nir)$subtract(image$select(swir1)))$
       divide(image$select(nir)$add(image$select(swir1)))$
       rename(paste0('ndwi_', indexMetrics))
+  )
+}
+
+getMNDWI <- function(image) {
+  return(
+    (image$select(green)$subtract(image$select(swir1)))$
+      divide(image$select(green)$add(image$select(swir1)))$
+      rename(paste0('mndwi_', indexMetrics))
   )
 }
 
@@ -117,16 +133,33 @@ getIRECI <- function(image) {
 }
 
 getTCARI <- function(image) {
-  
+  return(
+    (image$select(redge1)$subtract(image$select(red)))$subtract(0.2)$
+      multiply((image$select(redge1)$subtract(image$select(green))))$
+      multiply((image$select(redge1)$divide(image$select(red))))$
+      multiply(3)$
+      rename(paste0('tcari_', indexMetrics))
+    
+  )
 }
 
+getSFDVI <- function(image) {
+  return(
+    ((image$select(green)$add(image$select(nir)))$divide(2))$
+      subtract(image$select(red)$add(image$select(redge1)))$divide(2)$
+      rename(paste0('sfdvi_', indexMetrics))
+  )
+}
 
-x <- getIRECI(mosaic)
-Map$addLayer(x$select('ireci_median'))
+getNDVIRED <- function(image) {
+  return(
+    (image$select(redge1)$subtract(image$select(red)))$
+      divide(image$select(redge1)$add(image$select(red)))$
+      rename(paste0('ndvired_', indexMetrics))
+  )
+}
 
-
-
-
+## NDBI, MNDWI, CIRE, VI700, IRECI, TCARI, SFDVI, NDVIRED
 getIndexes <- function(image) {
   return(
     getNDVI(image)$addBands(
@@ -135,7 +168,23 @@ getIndexes <- function(image) {
           getGCVI(image)$addBands(
             getPRI(image)$addBands(
               getEVI2(image)$addBands(
-                getSAVI(image)
+                getSAVI(image)$addBands(
+                  getNDBI(image)$addBands(
+                    getMNDWI(image)$addBands(
+                      getCIRE(image)$addBands(
+                        getVI700(image)$addBands(
+                          getIRECI(image)$addBands(
+                            getTCARI(image)$addBands(
+                              getSFDVI(image)$addBands(
+                                getNDVIRED(image)
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
               )
             )
           )
