@@ -91,6 +91,42 @@ getSAVI <- function(image) {
   )
 }
 
+## specific for sentinel-2 with red edge bands 
+getCIRE <- function(image) {
+  return(
+    (image$select(nir)$divide(image$select(redge1)))$subtract(1)$
+      rename(paste0('cire_', indexMetrics))
+  )
+}
+
+getVI700 <- function(image) {
+  return(
+    (image$select(redge1)$subtract(image$select(red)))$
+      divide(image$select(redge1)$add(image$select(red)))$
+      rename(paste0('vi700_', indexMetrics))
+  )
+}
+
+getIRECI <- function(image) {
+  return(
+    (image$select(redge3)$subtract(image$select(red)))$
+      divide(image$select(redge1))$divide(image$select(redge2))$
+      rename(paste0('ireci_', indexMetrics))
+    
+  )
+}
+
+getTCARI <- function(image) {
+  
+}
+
+
+x <- getIRECI(mosaic)
+Map$addLayer(x$select('ireci_median'))
+
+
+
+
 getIndexes <- function(image) {
   return(
     getNDVI(image)$addBands(
