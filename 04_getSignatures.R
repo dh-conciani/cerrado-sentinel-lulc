@@ -8,8 +8,8 @@ library(stringr)
 ee_Initialize()
 
 ## define version to be checked 
-version_in <- "1"     ## version string
-version_out <- "1"
+version_in <- "2"     ## version string
+version_out <- "3"
 
 ## set folder to be checked 
 dirout <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version_out, '/')
@@ -104,6 +104,9 @@ for(m in 1:length(missing)) {
   blue <- getBands(indexMetrics, 'blue')
   green <- getBands(indexMetrics, 'green(?!.*texture)')
   red <- getBands(indexMetrics, 'red(?!_edge)')
+  redge1 <- getBands(indexMetrics, 'red_edge_1')
+  redge2 <- getBands(indexMetrics, 'red_edge_2')
+  redge3 <- getBands(indexMetrics, 'red_edge_2')
   nir <- getBands(indexMetrics, 'nir')
   swir1 <- getBands(indexMetrics, 'swir1')
   swir2 <- getBands(indexMetrics, 'swir2')
@@ -116,11 +119,27 @@ for(m in 1:length(missing)) {
     )
   }
   
+  getNDBI <- function(image) {
+    return(
+      (image$select(swir1)$subtract(image$select(nir)))$
+        divide(image$select(swir1)$add(image$select(nir)))$
+        rename(paste0('ndbi_', indexMetrics))
+    )
+  }
+  
   getNDWI <- function(image) {
     return(
       (image$select(nir)$subtract(image$select(swir1)))$
         divide(image$select(nir)$add(image$select(swir1)))$
         rename(paste0('ndwi_', indexMetrics))
+    )
+  }
+  
+  getMNDWI <- function(image) {
+    return(
+      (image$select(green)$subtract(image$select(swir1)))$
+        divide(image$select(green)$add(image$select(swir1)))$
+        rename(paste0('mndwi_', indexMetrics))
     )
   }
   
@@ -163,6 +182,59 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## specific for sentinel-2 with red edge bands 
+  getCIRE <- function(image) {
+    return(
+      (image$select(nir)$divide(image$select(redge1)))$subtract(1)$
+        rename(paste0('cire_', indexMetrics))
+    )
+  }
+  
+  getVI700 <- function(image) {
+    return(
+      (image$select(redge1)$subtract(image$select(red)))$
+        divide(image$select(redge1)$add(image$select(red)))$
+        rename(paste0('vi700_', indexMetrics))
+    )
+  }
+  
+  getIRECI <- function(image) {
+    return(
+      (image$select(redge3)$subtract(image$select(red)))$
+        divide(image$select(redge1))$divide(image$select(redge2))$
+        rename(paste0('ireci_', indexMetrics))
+      
+    )
+  }
+  
+  getTCARI <- function(image) {
+    return(
+      (image$select(redge1)$subtract(image$select(red)))$subtract(0.2)$
+        multiply((image$select(redge1)$subtract(image$select(green))))$
+        multiply((image$select(redge1)$divide(image$select(red))))$
+        multiply(3)$
+        rename(paste0('tcari_', indexMetrics))
+      
+    )
+  }
+  
+  getSFDVI <- function(image) {
+    return(
+      ((image$select(green)$add(image$select(nir)))$divide(2))$
+        subtract(image$select(red)$add(image$select(redge1)))$divide(2)$
+        rename(paste0('sfdvi_', indexMetrics))
+    )
+  }
+  
+  getNDVIRED <- function(image) {
+    return(
+      (image$select(redge1)$subtract(image$select(red)))$
+        divide(image$select(redge1)$add(image$select(red)))$
+        rename(paste0('ndvired_', indexMetrics))
+    )
+  }
+  
+  ## NDBI, MNDWI, CIRE, VI700, IRECI, TCARI, SFDVI, NDVIRED
   getIndexes <- function(image) {
     return(
       getNDVI(image)$addBands(
@@ -171,7 +243,23 @@ for(m in 1:length(missing)) {
             getGCVI(image)$addBands(
               getPRI(image)$addBands(
                 getEVI2(image)$addBands(
-                  getSAVI(image)
+                  getSAVI(image)$addBands(
+                    getNDBI(image)$addBands(
+                      getMNDWI(image)$addBands(
+                        getCIRE(image)$addBands(
+                          getVI700(image)$addBands(
+                            getIRECI(image)$addBands(
+                              getTCARI(image)$addBands(
+                                getSFDVI(image)$addBands(
+                                  getNDVIRED(image)
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
                 )
               )
             )
