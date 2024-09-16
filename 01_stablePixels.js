@@ -16,7 +16,7 @@ var assetStates = ee.Image('projects/mapbiomas-workspace/AUXILIAR/estados-2016-r
 var dirout = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/masks/';
 
 // Set string to identify the output version
-var version_out = '1';
+var version_out = '2';
 
 // Read mapbiomas lulc -- collection 8.0
 var collection = ee.Image('projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1');
@@ -184,7 +184,7 @@ stable = stable.where(stable.eq(3).and(canopy_heigth.lt(4)), 50)
                .where(stable.eq(12).and(canopy_heigth.gte(6)), 50)
                .where(stable.eq(15).and(canopy_heigth.gte(8)), 50)
                .where(stable.eq(19).and(canopy_heigth.gt(7)), 50)
-               .where(stable.eq(25).and(canopy_heigth.gt(0)), 50)
+               //.where(stable.eq(25).and(canopy_heigth.gt(0)), 50)
                .where(stable.eq(33).and(canopy_heigth.gt(0)), 50);
 
 Map.addLayer(stable, vis, '8. Filtered by GEDI', false);
