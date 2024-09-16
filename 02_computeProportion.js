@@ -3,7 +3,7 @@
 // dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
 // Input metadata
-var version = '1';
+var version = '2';
 
 // Define classes to be assessed
 var classes = [3, 4, 11, 12, 15, 18, 25, 33];
