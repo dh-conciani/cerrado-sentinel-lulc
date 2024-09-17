@@ -9,7 +9,7 @@ ee_Initialize()
 
 ## define version to be checked 
 version_in <- "2"     ## version string
-version_out <- "3"
+version_out <- "4"
 
 ## set folder to be checked 
 dirout <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version_out, '/')
@@ -82,6 +82,17 @@ for(m in 1:length(missing)) {
   ## get heigth above nearest drainage
   hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
     clip(region_i)$rename('hand')
+  
+  ## get digital elevation models
+  merit_dem <- ee$Image('MERIT/DEM/v1_0_3')$select('dem')$int16()$
+    clip(region_i)$rename('merit_dem')
+  
+  ana_dem <- ee$Image('projects/et-brasil/assets/anadem/v1')$
+    clip(region_i)$rename('ana_dem')
+  
+  ## get slopes
+  merit_slope <- ee$Terrain$slope(merit_dem)$rename('merit_slope')
+  ana_slope <- ee$Terrain$slope(ana_dem)$rename('ana_slope')
   
   ## get the landsat mosaic for the current year 
   mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i))$
@@ -277,6 +288,10 @@ for(m in 1:length(missing)) {
     addBands(lon_sin)$
     addBands(lon_cos)$
     addBands(hand)$
+    addBands(merit_dem)$
+    addBands(ana_dem)$
+    addBands(merit_slope)$
+    addBands(ana_slope)$
     addBands(fire_age$select(paste0('classification_', year_i))$clip(region_i)$rename('fire_age'))$
     addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))$
     addBands(indexImage)
