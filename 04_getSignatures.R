@@ -122,6 +122,7 @@ for(m in 1:length(missing)) {
   swir1 <- getBands(indexMetrics, 'swir1')
   swir2 <- getBands(indexMetrics, 'swir2')
   
+  ## normalized difference vegetation index 
   getNDVI <- function(image) {
     x <- image$select(nir)$subtract(image$select(red))
     y <- image$select(nir)$add(image$select(red))
@@ -131,16 +132,18 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## normalized difference built-up index
   getNDBI <- function(image) {
-    return(
-      (image$select(swir1)$subtract(image$select(nir)))$
-        divide(image$select(swir1)$add(image$select(nir)))$
-        rename(paste0('ndbi_', indexMetrics))
+    x <- image$select(swir1)$subtract(image$select(nir))
+    y <- image$select(swir1)$add(image$select(nir))
+    z <- x$divide(y)
+    return (
+      z$rename(paste0('ndbi_', indexMetrics))
     )
   }
   
-  a <- getNDVI(mosaic_i)
-  Map$addLayer(a$select('ndvi_median'))
+  a <- getNDBI(mosaic_i)
+  Map$addLayer(a$select('ndbi_median'))
   
   getNDWI <- function(image) {
     return(
