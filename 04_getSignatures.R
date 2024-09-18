@@ -172,20 +172,20 @@ for(m in 1:length(missing)) {
     )
   }
   
-  a <- getPRI(mosaic_i)
-  Map$addLayer(a$select('pri_median'))
-  
+  ## cellulose absorption index 
   getCAI <- function(image) {
+    x <- image$select(swir2)$divide(image$select(swir1))
     return(
-      image$select(swir2)$divide(image$select(swir1))$
-        rename(paste0('cai_', indexMetrics))
+      x$rename(paste0('cai_', indexMetrics))
     )
   }
   
+  ## green chlorofyll vegetation index 
   getGCVI <- function(image) {
+    x <- image$select(nir)$divide(image$select(green))
+    y <- x$subtract(1)
     return(
-      (image$select(nir)$divide(image$select(green)))$subtract(1)$
-        rename(paste0('gcvi_', indexMetrics))
+      y$rename(paste0('gcvi_', indexMetrics))
     )
   }
   
@@ -197,6 +197,9 @@ for(m in 1:length(missing)) {
       
     )
   }
+  
+  a <- getGCVI(mosaic_i)
+  Map$addLayer(a$select('gcvi_median'), list(palette= c('black', 'white'), min=0, max=4))
   
   getSAVI <- function(image) {
     return(
