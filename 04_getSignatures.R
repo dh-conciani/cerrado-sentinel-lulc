@@ -123,10 +123,11 @@ for(m in 1:length(missing)) {
   swir2 <- getBands(indexMetrics, 'swir2')
   
   getNDVI <- function(image) {
-    return(
-      (image$select(nir)$subtract(image$select(red)))$
-        divide(image$select(nir)$add(image$select(red)))$
-        rename(paste0('ndvi_', indexMetrics))
+    x <- image$select(nir)$subtract(image$select(red))
+    y <- image$select(nir)$add(image$select(red))
+    z <- x$divide(y)
+    return (
+      z$rename(paste0('ndvi_', indexMetrics))
     )
   }
   
@@ -137,6 +138,9 @@ for(m in 1:length(missing)) {
         rename(paste0('ndbi_', indexMetrics))
     )
   }
+  
+  a <- getNDVI(mosaic_i)
+  Map$addLayer(a$select('ndvi_median'))
   
   getNDWI <- function(image) {
     return(
