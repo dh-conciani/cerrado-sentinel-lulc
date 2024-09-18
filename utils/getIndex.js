@@ -3,15 +3,118 @@ var mosaic = ee.ImageCollection('projects/mapbiomas-mosaics/assets/SENTINEL/BRAZ
   .filterMetadata('biome', 'equals', 'CERRADO')
   .filterMetadata('year', 'equals', 2023)
   .mosaic()
-  
+
+// normalized differecen vegetation index
 var getNDVI = function(image) {
   var x = image.select('nir_median').subtract(image.select('red_median'))
   var y = image.select('nir_median').add(image.select('red_median'))
   var z = x.divide(y)
-  return z
+  return z.rename('ndvi')
 };
 
-var a = getNDVI(mosaic)
+// normalized difference built-up index
+var getNDBI = function(image) {
+  var x = image.select('swir1_median').subtract(image.select('nir_median'))
+  var y = image.select('swir1_median').add(image.select('nir_median'))
+  var z = x.divide(y)
+  return z.rename('ndbi')
+};
 
-Map.addLayer(a)
+// normalized difference water index
+var getNDWI = function(image) {
+  var x = image.select('nir_median').subtract(image.select('swir1_median'))
+  var y = image.select('nir_median').add(image.select('swir1_median'))
+  var z = x.divide(y)
+  return z.rename('ndwi')
+};
+
+// normalized difference water index
+var getMNDWI = function(image) {
+  var x = image.select('green_median').subtract(image.select('swir1_median'))
+  var y = image.select('green_median').add(image.select('swir1_median'))
+  var z = x.divide(y)
+  return z.rename('mndwi')
+};
+
+// normalized difference water index
+var getPRI = function(image) {
+  var x = image.select('blue_median').subtract(image.select('green_median'))
+  var y = image.select('blue_median').add(image.select('green_median'))
+  var z = x.divide(y)
+  return z.rename('pri')
+};
+
+// cellulose absorption index 
+var getCAI = function(image) {
+  var x = image.select('swir2_median').divide(image.select('swir1_median'))
+  return x.rename('cai')
+};
+
+// green chlorofyll vegetation index 
+var getGCVI = function(image) {
+  var x = image.select('nir_median').divide(image.select('green_median'))
+  var y = x.subtract(1)
+  return y.rename('gcvi')
+}
+
+// enchanced vegetation index 2
+var getEVI2 = function(image) {
+  var x = image.select('nir_median').subtract(image.select('red_median'))
+  var yi = image.select('red_median').multiply(2.4)
+  yi = yi.add(image.select('nir_median')).add(1)
+  var zi = x.divide(yi).multiply(2.5)
+  return zi.rename('evi2')
+}
+
+// soil adjusted vegetation index
+var getSAVI = function(image) {
+  var x = image.select('nir_median').subtract(image.select('red_median'))
+  var y = image.select('nir_median').add(image.select('red_median')).add(0.5)
+  var z = x.divide(y).multiply(1.5)
+  return z.rename('savi')
+}
+
+// normalized difference phenology index
+var getNDPI = function(image) {
+  var xi = image.select('red_median').multiply(0.74)
+  var xj = image.select('swir1_median').multiply(0.26)
+  var xij = xi.add(xj)
+  var x = image.select('nir_median').subtract(xij)
+  var y = image.select('nir_median').add(xij)
+  var z = x.divide(y)
+  return (z.rename('ndpi'))
+}
+
+/////// specific for sentinel-2
+
+// vegetation index 700nm
+var getVI700 = function(image) {
+  var x = image.select('red_edge_1_median').subtract(image.select('red_median'))
+  var y = image.select('red_edge_1_median').add(image.select('red_median'))
+  var z = x.divide(y)
+  return z.rename('VI700')
+}
+
+// inveted red-edge chlorophyll index 
+var getIRECI = function(image) {
+  var x = image.select('red_edge_3_median').subtract(image.select('red_median'))
+  var y = image.select('red_edge_1_median').divide(image.select('red_edge_2_median'))
+  var z = x.divide(y)
+  return z.rename('IRECI')
+}
+
+// chlorofyll index red edge
+var getCIRE = function(image) {
+  var x = image.select('nir_median').divide(image.select('red_edge_1_median')).subtract(1)
+  return x.rename('cire')
+}
+
+
+var a = getIRECI(mosaic)
+Map.addLayer(a, {palette: ['black', 'white'], min:0, max: 5000})
+
+
+
+
+
 
