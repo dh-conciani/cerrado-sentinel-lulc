@@ -142,24 +142,38 @@ for(m in 1:length(missing)) {
     )
   }
   
-  a <- getNDBI(mosaic_i)
-  Map$addLayer(a$select('ndbi_median'))
-  
+  ## normalized difference water index 
   getNDWI <- function(image) {
-    return(
-      (image$select(nir)$subtract(image$select(swir1)))$
-        divide(image$select(nir)$add(image$select(swir1)))$
-        rename(paste0('ndwi_', indexMetrics))
+    x <- image$select(nir)$subtract(image$select(swir1))
+    y <- image$select(nir)$add(image$select(swir1))
+    z <- x$divide(y)
+    return (
+      z$rename(paste0('ndwi_', indexMetrics))
     )
   }
   
+  ## modified normalized difference water index
   getMNDWI <- function(image) {
-    return(
-      (image$select(green)$subtract(image$select(swir1)))$
-        divide(image$select(green)$add(image$select(swir1)))$
-        rename(paste0('mndwi_', indexMetrics))
+    x <- image$select(green)$subtract(image$select(swir1))
+    y <- image$select(green)$add(image$select(swir1))
+    z <- x$divide(y)
+    return (
+      z$rename(paste0('mndwi_', indexMetrics))
     )
   }
+  
+  ## photochemical reflectance index 
+  getPRI <- function(image) {
+    x <- image$select(blue)$subtract(image$select(green))
+    y <- image$select(blue)$add(image$select(green))
+    z <- x$divide(y)
+    return (
+      z$rename(paste0('pri_', indexMetrics))
+    )
+  }
+  
+  a <- getPRI(mosaic_i)
+  Map$addLayer(a$select('pri_median'))
   
   getCAI <- function(image) {
     return(
@@ -172,14 +186,6 @@ for(m in 1:length(missing)) {
     return(
       (image$select(nir)$divide(image$select(green)))$subtract(1)$
         rename(paste0('gcvi_', indexMetrics))
-    )
-  }
-  
-  getPRI <- function(image) {
-    return(
-      (image$select(blue)$subtract(image$select(green)))$
-        divide(image$select(blue)$add(image$select(green)))$
-        rename(paste0('pri_', indexMetrics))
     )
   }
   
