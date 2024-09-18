@@ -99,7 +99,7 @@ for(m in 1:length(missing)) {
     filterBounds(region_i)$
     mosaic()$select(bands)
   
-  ## compute spectrla indexes
+  ## compute spectral indexes (new: ndpi, ndbi, mndwi)
   ## metrics to be considered for indexes
   indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
   
@@ -117,7 +117,7 @@ for(m in 1:length(missing)) {
   red <- getBands(indexMetrics, 'red(?!_edge)')
   redge1 <- getBands(indexMetrics, 'red_edge_1')
   redge2 <- getBands(indexMetrics, 'red_edge_2')
-  redge3 <- getBands(indexMetrics, 'red_edge_2')
+  redge3 <- getBands(indexMetrics, 'red_edge_3')
   nir <- getBands(indexMetrics, 'nir')
   swir1 <- getBands(indexMetrics, 'swir1')
   swir2 <- getBands(indexMetrics, 'swir2')
@@ -189,48 +189,67 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## enhanced vegetation index 2
   getEVI2 <- function(image) {
+    x <- image$select(nir)$subtract(image$select(red))
+    yi <- image$select(red)$multiply(2.4)
+    yi <- yi$add(image$select(nir))$add(1)
+    z <- x$divide(yi)$multiply(2.5)
     return(
-      ((image$select(nir)$subtract(image$select(red)))$multiply(2.5))$divide(
-        image$select(nir)$add(2.4)$multiply(image$select(red)$add(1)))$
-        rename(paste0('evi2_', indexMetrics))
-      
+      z$rename(paste0('evi2_', indexMetrics))
     )
   }
   
-  a <- getGCVI(mosaic_i)
-  Map$addLayer(a$select('gcvi_median'), list(palette= c('black', 'white'), min=0, max=4))
-  
+  ## soil adjusted vegetation index
   getSAVI <- function(image) {
+    x <- image$select(nir)$subtract(image$select(red))
+    y <- image$select(nir)$add(image$select(red))$add(0.5)
+    z <- x$divide(y)$multiply(1.5)
     return(
-      ((image$select(nir)$subtract(image$select(red)))$multiply(1.5))$
-        divide(image$select(nir)$add(0.5)$add(image$select(red)))$
-        rename(paste0('savi_', indexMetrics))
+      z$rename(paste0('savi_', indexMetrics))
     )
   }
   
-  ## specific for sentinel-2 with red edge bands 
-  getCIRE <- function(image) {
+  ## normalized difference phenology index 
+  getNDPI <- function(image) {
+    xi <- image$select(red)$multiply(0.74)
+    xj <- image$select(swir1)$multiply(0.26)
+    xij <- xi$add(xj)
+    x <- image$select(nir)$subtract(xij)
+    y <- image$select(nir)$add(xij)
+    z <- x$divide(y)
     return(
-      (image$select(nir)$divide(image$select(redge1)))$subtract(1)$
-        rename(paste0('cire_', indexMetrics))
+      z$rename(paste0('ndpi_', indexMetrics))
     )
   }
   
+  #### specific for sentinel-2
+  
+  ## vegetation index 700nm
   getVI700 <- function(image) {
+    x <- image$select(redge1)$subtract(image$select(red))
+    y <- image$select(redge1)$add(image$select(red))
+    z <- x$divide(y)
     return(
-      (image$select(redge1)$subtract(image$select(red)))$
-        divide(image$select(redge1)$add(image$select(red)))$
-        rename(paste0('vi700_', indexMetrics))
+      z$rename(paste0('vi700_', indexMetrics))
     )
   }
   
+  ## inverted red-edge chlorophyll index
   getIRECI <- function(image) {
+    x <- image$select(redge3)$subtract(image$select(red))
+    y <- image$select(redge1)$divide(image$select(redge2))
+    z <- x$divide(y)
     return(
-      (image$select(redge3)$subtract(image$select(red)))$
-        divide(image$select(redge1))$divide(image$select(redge2))$
-        rename(paste0('ireci_', indexMetrics))
-      
+      z$rename(paste0('ireci_', indexMetrics))
+    )
+  }
+  
+  ## chlorofyll index red edge
+  getCIRE <- function(image) {
+    x <- image$select(nir)$divide(image$select(redge1))$subtract(1)
+    return(
+      x$rename(paste0('cire_', indexMetrics))
     )
   }
   
@@ -244,6 +263,9 @@ for(m in 1:length(missing)) {
       
     )
   }
+  
+  a <- getIRECI(mosaic_i)
+  Map$addLayer(a$select('ireci_median'), list(palette= c('black', 'white'), min=0, max=5000)) 
   
   getSFDVI <- function(image) {
     return(
