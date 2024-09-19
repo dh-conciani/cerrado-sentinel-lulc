@@ -276,11 +276,20 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## spectral feature depth vegetation index
   getSFDVI <- function(image) {
-    
+    x <- image$select(green)$add(image$select(nir))
+    x <- x$divide(2)
+    y <- image$select(red)$add(image$select(redge1))
+    y <- y$divide(2)
+    z <- x$subtract(y)
+    return(
+      z$rename(paste0('sfdvi_', indexMetrics))
+    )
   }
   
-  
+  a <- getSFDVI(mosaic_i)
+  Map$addLayer(a$select('sfdvi_median'), list(palette= c('black', 'white'), min=0, max= 1000))
   
   getIndexes <- function(image) {
     return(
