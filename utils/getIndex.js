@@ -87,6 +87,14 @@ var getNDPI = function(image) {
 
 /////// specific for sentinel-2
 
+// normalized differecen vegetation index with red edge 
+var getNDVIRED = function(image) {
+  var x = image.select('red_edge_1_median').subtract(image.select('red_median'))
+  var y = image.select('red_edge_1_median').add(image.select('red_median'))
+  var z = x.divide(y)
+  return z.rename('ndvired')
+};
+
 // vegetation index 700nm
 var getVI700 = function(image) {
   var x = image.select('red_edge_1_median').subtract(image.select('red_median'))
@@ -109,9 +117,37 @@ var getCIRE = function(image) {
   return x.rename('cire')
 }
 
+// transformed chlorophyll absorption in reflectance index.
+var getTCARI = function(image) {
+  var xi = image.select('red_edge_1_median').subtract(image.select('red_median'))
+  var xj = image.select('red_edge_1_median').subtract(image.select('green_median'))
+  var xk = image.select('red_edge_1_median').divide(image.select('red_median'))
+  xj = xj.multiply(0.2)
+  var xl = xi.subtract(xj)
+  var xm = xl.multiply(xk).multiply(3)
+  return xm.rename('tcari')
+}
 
-var a = getIRECI(mosaic)
-Map.addLayer(a, {palette: ['black', 'white'], min:0, max: 5000})
+// spectral feature depth vegetation index
+var getSFDVI = function(image) {
+  var x = image.select('green_median').add(image.select('nir_median'))
+  x = x.divide(2)
+  var y = image.select('red_median').add(image.select('red_edge_1_median'))
+  y = y.divide(2)
+  var z = x.subtract(y)
+  return z.rename('sfdvi')
+}
+
+// normalized difference red edge index 
+var getNDRE = function(image) {
+  var x = image.select('nir_median').subtract(image.select('red_edge_1_median'))
+  var y = image.select('nir_median').add(image.select('red_edge_1_median'))
+  var z = x.divide(y)
+  return z.rename('NDRE')
+}
+
+var a = getNDRE(mosaic)
+Map.addLayer(a, {palette: ['black', 'white'], min:-0.1, max: 0.9})
 
 
 
