@@ -288,8 +288,18 @@ for(m in 1:length(missing)) {
     )
   }
   
-  a <- getSFDVI(mosaic_i)
-  Map$addLayer(a$select('sfdvi_median'), list(palette= c('black', 'white'), min=0, max= 1000))
+  ## normalized difference red edge index
+  getNDRE <- function(image) {
+    x <- image$select(nir)$subtract(image$select(redge1))
+    y <- image$select(nir)$add(image$select(redge1))
+    z <- x$divide(y)
+    return(
+      z$rename(paste0('ndre_', indexMetrics))
+    )
+  }
+  
+  #a <- getNDRE(mosaic_i)
+  #Map$addLayer(a$select('ndre_median'), list(palette= c('black', 'white'), min=-0.1, max= 0.8))
   
   getIndexes <- function(image) {
     return(
@@ -307,7 +317,11 @@ for(m in 1:length(missing)) {
                             getIRECI(image)$addBands(
                               getTCARI(image)$addBands(
                                 getSFDVI(image)$addBands(
-                                  getNDVIRED(image)
+                                  getNDVIRED(image)$addBands(
+                                    getNDPI(image)$addBands(
+                                      getNDRE(image)
+                                    )
+                                  )
                                 )
                               )
                             )
