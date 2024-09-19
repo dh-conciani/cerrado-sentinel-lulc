@@ -225,6 +225,16 @@ for(m in 1:length(missing)) {
   
   #### specific for sentinel-2
   
+  ## normalized difference vegetation index with red edge band 
+  getNDVIRED <- function(image) {
+    x <- image$select(redge1)$subtract(image$select(red))
+    y <- image$select(redge1)$add(image$select('red_median'))
+    z <- x$divide(y)
+    return(
+      z$rename(paste0('ndvired_', indexMetrics))
+    )
+  }
+  
   ## vegetation index 700nm
   getVI700 <- function(image) {
     x <- image$select(redge1)$subtract(image$select(red))
@@ -253,37 +263,25 @@ for(m in 1:length(missing)) {
     )
   }
   
+  ## transformed chlorophyll absorption in reflectance index
   getTCARI <- function(image) {
+    xi <- image$select(redge1)$subtract(image$select(red))
+    xj <- image$select(redge1)$subtract(image$select(green))
+    xk <- image$select(redge1)$divide(image$select(red))
+    xj <- xj$multiply(0.2)
+    xl <- xi$subtract(xj)
+    xm <- xl$multiply(xk)$multiply(3)
     return(
-      (image$select(redge1)$subtract(image$select(red)))$subtract(0.2)$
-        multiply((image$select(redge1)$subtract(image$select(green))))$
-        multiply((image$select(redge1)$divide(image$select(red))))$
-        multiply(3)$
-        rename(paste0('tcari_', indexMetrics))
-      
+      xm$rename(paste0('tcari_', indexMetrics))
     )
   }
-  
-  a <- getIRECI(mosaic_i)
-  Map$addLayer(a$select('ireci_median'), list(palette= c('black', 'white'), min=0, max=5000)) 
   
   getSFDVI <- function(image) {
-    return(
-      ((image$select(green)$add(image$select(nir)))$divide(2))$
-        subtract(image$select(red)$add(image$select(redge1)))$divide(2)$
-        rename(paste0('sfdvi_', indexMetrics))
-    )
+    
   }
   
-  getNDVIRED <- function(image) {
-    return(
-      (image$select(redge1)$subtract(image$select(red)))$
-        divide(image$select(redge1)$add(image$select(red)))$
-        rename(paste0('ndvired_', indexMetrics))
-    )
-  }
   
-  ## NDBI, MNDWI, CIRE, VI700, IRECI, TCARI, SFDVI, NDVIRED
+  
   getIndexes <- function(image) {
     return(
       getNDVI(image)$addBands(
