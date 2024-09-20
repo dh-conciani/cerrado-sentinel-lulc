@@ -358,6 +358,13 @@ for(m in 1:length(missing)) {
   
   ## subset sample points for the region 
   samples_ij <- samples$filterBounds(regionsCollection$filterMetadata('mapb', "equals", region_list))
+  
+  ## apply subset for problematic regions
+  ## add a random column to the FeatureCollection
+  # samples_ij <- samples_ij$randomColumn('randomValue')
+  # ## filter to retain 70% of the features
+  # samples_ij <- samples_ij$filter(ee$Filter$lt('randomValue', 0.7))
+  
   print(paste0('number of points: ', samples_ij$size()$getInfo()))
   
   ## get training samples
