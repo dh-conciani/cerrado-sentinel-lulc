@@ -10,7 +10,7 @@ ee_Initialize()
 
 ## Define strings to be used as metadata
 samples_version <- '4'   # input training samples version
-output_version <-  '5'   # output classification version 
+output_version <-  '6'   # output classification version 
 
 ## Define output asset
 output_asset <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/generalMap/'
@@ -106,10 +106,12 @@ for (i in 1:length(regions_list)) {
   
   ## get digital elevation models
   merit_dem <- ee$Image('MERIT/DEM/v1_0_3')$select('dem')$int16()$
+    unmask(0)$
     updateMask(region_i_ras)$
     rename('merit_dem')
   
   ana_dem <- ee$Image('projects/et-brasil/assets/anadem/v1')$
+    unmask(0)$
     updateMask(region_i_ras)$
     rename('ana_dem')
   
@@ -123,7 +125,7 @@ for (i in 1:length(regions_list)) {
   fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('classification_2023'))
   
   # Use grep to match exactly followed by the year and version
-  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v5$'), missing)]
+  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v6$'), missing)]
   
   # Extract the years using sregex
   years_ij <- as.numeric(str_extract(missing_i, "[0-9]{4}"))
@@ -381,7 +383,7 @@ for (i in 1:length(regions_list)) {
     
     ## add index
     indexImage <- getIndexes(mosaic_i)
-    
+
     ## bind mapbiomas mosaic and auxiliary bands
     mosaic_i <- mosaic_i$addBands(lat)$
       addBands(lon_sin)$
@@ -395,8 +397,6 @@ for (i in 1:length(regions_list)) {
       addBands(ee$Image(as.numeric(years_ij[j]))$int16()$rename('year'))$
       addBands(indexImage)
     
-    
-      
     ## Limit water samples only to 175 samples (avoid over-estimation)
     water_samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))$
       filter(ee$Filter$eq("reference", 33))$
