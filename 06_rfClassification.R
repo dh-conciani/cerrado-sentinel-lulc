@@ -12,7 +12,7 @@ ee_Initialize(project='mapbiomas-mosaics')
 
 ## Define strings to be used as metadata
 samples_version <- '4'   # input training samples version
-output_version <-  '7'   # output classification version 
+output_version <-  '8'   # output classification version 
 
 ## Define output asset
 output_asset <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/generalMap/'
@@ -76,8 +76,6 @@ for (i in 1:length(regions_list)) {
     return(image$resample('bilinear')$reproject(crs= image$projection()$crs(), scale= 10))
   }
   
-  merit_dem$projection()$nominalScale()
-  
   ## Get latitude
   lat <- geo_coordinates$select('latitude')$
     add(5)$
@@ -115,8 +113,8 @@ for (i in 1:length(regions_list)) {
   
   ## get digital elevation models
   merit_dem <- resampleImage(ee$Image('MERIT/DEM/v1_0_3')$select('dem')$int16()$
-    unmask(0)$
-    rename('merit_dem'))
+                               unmask(0)$
+                               rename('merit_dem'))
   
   #Map$addLayer(merit_slope$randomVisualizer()) + Map$addLayer(region_i_ras)
   
@@ -134,7 +132,7 @@ for (i in 1:length(regions_list)) {
   fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('classification_2023'))
   
   # Use grep to match exactly followed by the year and version
-  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v7$'), missing)]
+  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v8$'), missing)]
   
   # Extract the years using sregex
   years_ij <- as.numeric(str_extract(missing_i, "[0-9]{4}"))
@@ -392,7 +390,7 @@ for (i in 1:length(regions_list)) {
     
     ## add index
     indexImage <- getIndexes(mosaic_i)
-
+    
     ## bind mapbiomas mosaic and auxiliary bands
     mosaic_i <- mosaic_i$addBands(lat)$
       addBands(lon_sin)$
@@ -416,6 +414,16 @@ for (i in 1:length(regions_list)) {
     training_ij <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))$
       filter(ee$Filter$neq("reference", 33))$ ## remove water samples
       merge(water_samples)
+    
+    ## filter training samples ## needs to implement as a function 
+    #### wetlands (get only 60% of samples)
+    training_ijk <- training_ij$filterMetadata('reference', 'equals', 11)$randomColumn('random')$
+      filter(ee$Filter$lt('random', 0.6))
+    
+    ## insert into training dataset
+    training_ij <- training_ij$
+      filter(ee$Filter$neq("reference", 11))$ ## remove wetlands samples
+      merge(training_ijk)
     
     ## Get bands
     bandNames_list <- mosaic_i$bandNames()$getInfo()
@@ -457,11 +465,11 @@ for (i in 1:length(regions_list)) {
       from= seq(0, length(classes)-1),
       to= as.numeric(classes)
     )$rename('classification')
-    Map$addLayer(classificationImage$randomVisualizer()) + Map$addLayer(region_i_ras)
+    #Map$addLayer(classificationImage$randomVisualizer()) + Map$addLayer(region_i_ras)
     
     ## Include classification as a band 
     toExport <- classificationImage
-      #$addBands(probabilities)
+    #$addBands(probabilities)
     
     ## Set properties
     toExport <- toExport$
