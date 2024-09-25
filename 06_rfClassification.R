@@ -405,26 +405,41 @@ for (i in 1:length(regions_list)) {
       addBands(ee$Image(as.numeric(years_ij[j]))$int16()$rename('year'))$
       addBands(indexImage)
     
-    ## Limit water samples only to 175 samples (avoid over-estimation)
-    water_samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))$
-      filter(ee$Filter$eq("reference", 33))$
-      filter(ee$Filter$eq("hand", 0))$
-      limit(175)                        ## insert water samples limited to 175 
+    ## read samples
+    samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))
     
-    ## Merge filtered water samples with other classes
-    training_ij <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))$
-      filter(ee$Filter$neq("reference", 33))$ ## remove water samples
-      merge(water_samples)
+    ## limit water to 175 samples (avoid over-estimation)
+    filterWater <- function(feature) {
+      return(
+        feature$
+          filter(ee$Filter$eq("reference", 33))$
+          filter(ee$Filter$eq("hand", 0))$
+          limit(175)
+      )
+    }
     
-    ## filter training samples ## needs to implement as a function 
-    #### wetlands (get only 60% of samples)
-    training_ijk <- training_ij$filterMetadata('reference', 'equals', 11)$randomColumn('random')$
-      filter(ee$Filter$lt('random', 0.6))
+    ## define function to filter classes based in proportion rules
+    filterProportion <- function(feature, class, proportion) {
+      return(
+        feature$filterMetadata('reference', 'equals', class)$randomColumn('random')$
+          filter(ee$Filter$lt('random', proportion))
+      )
+    }
     
-    ## insert into training dataset
-    training_ij <- training_ij$
-      filter(ee$Filter$neq("reference", 11))$ ## remove wetlands samples
-      merge(training_ijk)
+    ## apply filtering rules
+    recipe <- ee$FeatureCollection(list())
+    for(k in 1:length(classDict$class)) {
+      if(classDict$class[k] == 33) {
+        recipe <- recipe$merge(
+          filterWater(samples)
+        )
+      } else {
+        ## apply filtering rules
+        recipe <- recipe$merge(
+          filterProportion(samples, classDict$class[k], classDict$proportion[k])
+        )
+      }
+    }
     
     ## Get bands
     bandNames_list <- mosaic_i$bandNames()$getInfo()
