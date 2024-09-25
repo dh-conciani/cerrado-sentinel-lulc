@@ -14,6 +14,13 @@ ee_Initialize(project='mapbiomas-mosaics')
 samples_version <- '4'   # input training samples version
 output_version <-  '8'   # output classification version 
 
+## Define class dictionary
+classDict <- list(
+  class=      c(3, 4, 11, 12, 15, 18, 25, 33),
+  proportion= c(1, 1, 0.6, 1,  1,  1,  1,  1), ## adjust training samples proportion
+  name = c('Forest', 'Savanna', 'Wetland', 'Grassland', 'Pasture', 'Agriculture', 'Non-Vegetated', 'Water')
+)
+
 ## Define output asset
 output_asset <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/generalMap/'
 
@@ -44,12 +51,6 @@ expected <- as.vector(outer(regions_list, years, function(r, y) {
 
 # Find remaining files to process
 missing <- expected[!expected %in% files$ID]
-
-## Define class dictionary
-classDict <- list(
-  class= c(3, 4, 11, 12, 15, 18, 25, 33),
-  name = c('Forest', 'Savanna', 'Wetland', 'Grassland', 'Pasture', 'Agriculture', 'Non-Vegetated', 'Water')
-)
 
 ### Training samples (prefix string)
 training_dir <- 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/'
