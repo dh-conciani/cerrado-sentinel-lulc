@@ -12,12 +12,12 @@ ee_Initialize(project='mapbiomas-mosaics')
 
 ## Define strings to be used as metadata
 samples_version <- '4'   # input training samples version
-output_version <-  '8'   # output classification version 
+output_version <-  '9'   # output classification version 
 
 ## Define class dictionary
 classDict <- list(
-  class=      c(3, 4, 11, 12, 15, 18, 25, 33),
-  proportion= c(1, 1, 0.6, 1,  1,  1,  1,  1), ## adjust training samples proportion
+  class=      c(3,    4, 11, 12, 15, 18, 25, 33),
+  proportion= c(0.65, 1, 0.5, 1,  1,  1,  1,  1), ## adjust training samples proportion
   name = c('Forest', 'Savanna', 'Wetland', 'Grassland', 'Pasture', 'Agriculture', 'Non-Vegetated', 'Water')
 )
 
@@ -133,7 +133,7 @@ for (i in 1:length(regions_list)) {
   fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('classification_2023'))
   
   # Use grep to match exactly followed by the year and version
-  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v8$'), missing)]
+  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v9$'), missing)]
   
   # Extract the years using sregex
   years_ij <- as.numeric(str_extract(missing_i, "[0-9]{4}"))
@@ -427,19 +427,21 @@ for (i in 1:length(regions_list)) {
     }
     
     ## apply filtering rules
-    recipe <- ee$FeatureCollection(list())
+    training_ij <- ee$FeatureCollection(list())
     for(k in 1:length(classDict$class)) {
       if(classDict$class[k] == 33) {
-        recipe <- recipe$merge(
+        training_ij <- training_ij$merge(
           filterWater(samples)
         )
       } else {
         ## apply filtering rules
-        recipe <- recipe$merge(
+        training_ij <- training_ij$merge(
           filterProportion(samples, classDict$class[k], classDict$proportion[k])
         )
       }
     }
+    
+    
     
     ## Get bands
     bandNames_list <- mosaic_i$bandNames()$getInfo()
