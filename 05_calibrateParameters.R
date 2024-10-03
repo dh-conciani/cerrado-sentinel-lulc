@@ -16,13 +16,10 @@ ee_Initialize()
 version <- "4"
 
 ## set training folder 
-folder <- paste0('users/dh-conciani/collection9/training/v', version, '/')
+folder <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version, '/')
 
 ## read classification regions
 regions <- ee$FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2')
-
-## get landsat mosaic rules
-rules <- read.csv('./_aux/mosaic_rules.csv')
 
 ################## set sample size functions ##############################
 ## get the number of years to be used
@@ -42,10 +39,10 @@ getYears <- function(start_year, end_year, proportion) {
 
 ## set grid of parameters to be tested
 combinations <- expand.grid(
-  ntree=c(100, 200, 400, 800),
-  mtry=c(5, 10, 20, 40),
+  ntree=c(100, 200, 300),
+  mtry=c(4, 8, 12),
   region=c(1:38),
-  year=c(1985:2023)
+  year=c(2016:2023)
 )
 
 ################# check already processed files ################## comment if is the first run 
@@ -89,7 +86,7 @@ for (i in 1:length(unique(combinations$region))) {
     
     ## get combinations for region 
     try(combinations_k <- subset(combinations, region == unique(combinations$region)[i] &
-                               year == unique(combinations$year)[j]), silent = TRUE)
+                                   year == unique(combinations$year)[j]), silent = TRUE)
     
     if (nrow(combinations_k) == 0) {
       count <- count + 1
@@ -176,7 +173,7 @@ for (i in 1:length(unique(combinations$region))) {
       rm(tempImportance)
       
     }
-
+    
   }
   
 }
