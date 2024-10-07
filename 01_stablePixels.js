@@ -16,7 +16,7 @@ var assetStates = ee.Image('projects/mapbiomas-workspace/AUXILIAR/estados-2016-r
 var dirout = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/masks/';
 
 // Set string to identify the output version
-var version_out = '2';
+var version_out = '3';
 
 // Read mapbiomas lulc -- collection 8.0
 var collection = ee.Image('projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1');
@@ -84,6 +84,7 @@ var prodes = ee.Image('projects/ee-sad-cerrado/assets/ANCILLARY/produtos_desmata
 stable = stable.where(prodes.eq(1).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
 Map.addLayer(stable, vis, '1. Filtered by PRODES', false);
 
+/*
 // 2- Cerrado Deforestation Alert System (SAD Cerrado)
 var sad = ee.Image(1).clip(
   ee.FeatureCollection('projects/ee-sad-cerrado/assets/PUBLIC/SAD_CERRADO_ALERTAS')
@@ -92,10 +93,11 @@ var sad = ee.Image(1).clip(
     // filter to retain only deforestations at the end of 2023 
     .filterMetadata('detect_mon', 'less_than', 2401)
   );
-  
+
 // Erase stable pixels of native vegetation that were classified as deforestation by SAD 
 stable = stable.where(sad.eq(1).and(stable.eq(3).or(stable.eq(4).or(stable.eq(11).or(stable.eq(12))))), 27);
 Map.addLayer(stable, vis, '2. Filtered by SAD', false);
+*/
 
 // 3 - MapBiomas Alert (MB Alerta)
 var mb_alerta = ee.Image('projects/ee-sad-cerrado/assets/ANCILLARY/produtos_desmatamento/mb_alertas_up_to_2023_020524');
