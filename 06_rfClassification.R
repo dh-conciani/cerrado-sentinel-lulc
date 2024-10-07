@@ -11,8 +11,8 @@ library(stringr)
 ee_Initialize(project='mapbiomas-mosaics')
 
 ## Define strings to be used as metadata
-samples_version <- '4'   # input training samples version
-output_version <-  '9'   # output classification version 
+samples_version <- '5'   # input training samples version
+output_version <-  '10'   # output classification version 
 
 ## Define class dictionary
 classDict <- list(
@@ -127,13 +127,51 @@ for (i in 1:length(regions_list)) {
   merit_slope <- ee$Terrain$slope(merit_dem)$rename('merit_slope')
   ana_slope <- ee$Terrain$slope(ana_dem)$rename('ana_slope')
   
+  ## Merit based. represents hidrological patterns and areas susceptible to erosion 
+  dxx <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxx")$mosaic()$
+                         unmask(0)$
+                         rename('dxx'))
+  
+  dxy <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxy")$mosaic()$
+                         unmask(0)$
+                         rename('dxy'))
+  
+  dyy <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dyy")$mosaic()$
+                         unmask(0)$
+                         rename('dyy'))
+  
+  pcurv <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/pcurv")$mosaic()$
+                           unmask(0)$
+                           rename('pcurv'))
+  
+  tcurv <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/tcurv")$mosaic()$
+                           unmask(0)$
+                           rename('tcurv'))
+  
+  ## Solar radiation and wind exposition
+  aspect_cos <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/aspect-cosine")$mosaic()$
+                                unmask(0)$
+                                rename('aspect_cos'))
+  
+  aspect_sin <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/aspect-sine")$mosaic()$
+                                unmask(0)$
+                                rename('aspect_sin'))
+  
+  eastness <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/eastness")$mosaic()$
+                              unmask(0)$
+                              rename('eastness'))
+  
+  northness <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/northness")$mosaic()$
+                               unmask(0)$
+                               rename('northness'))
+  
   ## Time since last fire
   fire_age <- ee$Image('users/barbarasilvaIPAM/collection8/masks/fire_age_v2')
   ## add 2023 
   fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('classification_2023'))
   
   # Use grep to match exactly followed by the year and version
-  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v9$'), missing)]
+  missing_i <- missing[grep(paste0('CERRADO_', regions_list[i], '_[0-9]{4}_v10$'), missing)]
   
   # Extract the years using sregex
   years_ij <- as.numeric(str_extract(missing_i, "[0-9]{4}"))
@@ -401,6 +439,15 @@ for (i in 1:length(regions_list)) {
       addBands(ana_dem)$
       addBands(merit_slope)$
       addBands(ana_slope)$
+      addBands(dxx)$
+      addBands(dxy)$
+      addBands(dyy)$
+      addBands(pcurv)$
+      addBands(tcurv)$
+      addBands(aspect_cos)$
+      addBands(aspect_sin)$
+      addBands(eastness)$
+      addBands(northness)$
       addBands(fire_age$select(paste0('classification_', years_ij[j]))$updateMask(region_i_ras)$rename('fire_age'))$
       addBands(ee$Image(as.numeric(years_ij[j]))$int16()$rename('year'))$
       addBands(indexImage)
