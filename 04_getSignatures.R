@@ -8,8 +8,8 @@ library(stringr)
 ee_Initialize()
 
 ## define version to be checked 
-version_in <- "2"     ## version string
-version_out <- "4"
+version_in <- "3"     ## version string
+version_out <- "5"
 
 ## set folder to be checked 
 dirout <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version_out, '/')
@@ -94,6 +94,35 @@ for(m in 1:length(missing)) {
   merit_slope <- ee$Terrain$slope(merit_dem)$rename('merit_slope')
   ana_slope <- ee$Terrain$slope(ana_dem)$rename('ana_slope')
   
+  ## Merit based. represents hidrological patterns and areas susceptible to erosion 
+  dxx <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxx")$mosaic()$
+    clip(region_i)$rename('dxx')
+  
+  dxy <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxy")$mosaic()$
+    clip(region_i)$rename('dxy')
+  
+  dyy <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dyy")$mosaic()$
+    clip(region_i)$rename('dyy')
+  
+  pcurv <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/pcurv")$mosaic()$
+    clip(region_i)$rename('pcurv')
+  
+  tcurv <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/tcurv")$mosaic()$
+    clip(region_i)$rename('tcurv')
+
+  ## Solar radiation and wind exposition
+  aspect_cos <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/aspect-cosine")$mosaic()$
+    clip(region_i)$rename('aspect_cos');
+  
+  aspect_sin <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/aspect-sine")$mosaic()$
+    clip(region_i)$rename('aspect_sin')
+  
+  eastness <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/eastness")$mosaic()$
+    clip(region_i)$rename('eastness')
+  
+  northness <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/northness")$mosaic()$
+    clip(region_i)$rename('northness')
+
   ## get the landsat mosaic for the current year 
   mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i))$
     filterBounds(region_i)$
@@ -351,6 +380,15 @@ for(m in 1:length(missing)) {
     addBands(ana_dem)$
     addBands(merit_slope)$
     addBands(ana_slope)$
+    addBands(dxx)$
+    addBands(dxy)$
+    addBands(dyy)$
+    addBands(pcurv)$
+    addBands(tcurv)$
+    addBands(aspect_cos)$
+    addBands(aspect_sin)$
+    addBands(eastness)$
+    addBands(northness)$
     addBands(fire_age$select(paste0('classification_', year_i))$clip(region_i)$rename('fire_age'))$
     addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))$
     addBands(indexImage)
