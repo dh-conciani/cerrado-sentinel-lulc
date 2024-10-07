@@ -13,7 +13,7 @@ options(scipen= 9e3)
 ee_Initialize()
 
 ## set the version of training samples to used
-version <- "4"
+version <- "5"
 
 ## set training folder 
 folder <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version, '/')
