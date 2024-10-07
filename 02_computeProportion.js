@@ -3,7 +3,7 @@
 // dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
 // Input metadata
-var version = '2';
+var version = '3';
 
 // Define classes to be assessed
 var classes = [3, 4, 11, 12, 15, 18, 25, 33];
@@ -29,7 +29,7 @@ if (option == 'year') {
 }
 
 if (option == 'stable') {
-  var mapbiomas = ee.Image('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/masks/cerrado_trainingMask_1985_2023_v1');
+  var mapbiomas = ee.Image('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/masks/cerrado_trainingMask_1985_2023_v3');
 }
 
 // Define function to compute area (skm)
