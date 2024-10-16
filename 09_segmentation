@@ -1,4 +1,4 @@
-// -- -- -- -- 08_segmentation
+// -- -- -- -- 09_segmentation
 // Post-processing filter: Apply Sentinel-2 mosaics segmentation to refine the land cover classification.
 // This process applies a mode filter to the classification, based on the Sentinel-derived segments.
 // barbara.silva@ipam.org.br and dhemerson.costa@ipam.org.br
