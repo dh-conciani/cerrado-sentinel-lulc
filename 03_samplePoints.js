@@ -1,5 +1,5 @@
 // -- -- -- -- 03_samplePoints
-// sort stratified spatialPoints by region using stable pixels
+// sort stratified spatialPoints by region using stable pixels data
 // dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
 // Define string to use as metadata
