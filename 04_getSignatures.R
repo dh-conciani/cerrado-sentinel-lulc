@@ -1,26 +1,27 @@
-## For clarification, write to <dhemerson.costa@ipam.org.br> 
+## --- --- --- 04_getSignatures
 ## Exported data is composed by spatialPoints with spectral signature values grouped by column
 ## Auxiliary bands were computed (Lat, Long, NDVI amplitude and HAND)
+## dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
-## read libraries
+## Read libraries
 library(rgee)
 library(stringr)
 ee_Initialize()
 
-## define version to be checked 
+## Define version to be checked 
 version_in <- "3"     ## version string
 version_out <- "5"
 
-## set folder to be checked 
+## Set folder to be checked 
 dirout <- paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/training/v', version_out, '/')
 
-## list files on the asset
+## List files on the asset
 files <- ee_manage_assetlist(path_asset= dirout)
 
-## set regions
+## Set regions
 regions <- 1:38
 
-## set years
+## Set years
 years <- 2016:2023
 
 # Generate expected patterns
@@ -33,30 +34,30 @@ expected <- as.vector(outer(regions, years, function(r, y) {
 missing <- expected[!expected %in% files$ID]
 
 
-###########################################################
-## biome
+## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ## -- ##
+## Biome layer
 biomes <- ee$Image('projects/mapbiomas-workspace/AUXILIAR/biomas-2019-raster')
 cerrado <- biomes$updateMask(biomes$eq(4))
 
-## define mosaic input 
+## Define mosaic input 
 mosaic <- ee$ImageCollection('projects/mapbiomas-mosaics/assets/SENTINEL/BRAZIL/mosaics-3')$
   filterMetadata('biome', 'equals', 'CERRADO')
 
-## import classification regions
+## Import classification regions
 regionsCollection <- ee$FeatureCollection('users/dh-conciani/collection7/classification_regions/vector_v2')
 
-## import sample points
+## Import sample points
 samples <- ee$FeatureCollection(paste0('projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL_DEV/sample/points/samplePoints_v', version_in))
 
-## time since last fire
+## Time since last fire
 fire_age <- ee$Image('users/barbarasilvaIPAM/collection8/masks/fire_age_v2')
 ## add 2023 
 fire_age <- fire_age$addBands(fire_age$select('classification_2022')$rename('classification_2023'))
 
-## get bandnames to be extracted
+## Get bandnames to be extracted
 bands <- mosaic$first()$bandNames()$getInfo()
 
-## process each missing file 
+## Process each missing file 
 for(m in 1:length(missing)) {
   ## get region name
   region_list <- as.numeric(str_extract(missing[m], "(?<=reg)\\d+"))
@@ -65,36 +66,39 @@ for(m in 1:length(missing)) {
   ## print
   print(missing[m])
   
-  ## subset region
+  ## Subset region
   region_i <- regionsCollection$filterMetadata('mapb', "equals", region_list)$geometry()
   
-  ## compute additional bands
+  ## Compute additional bands
   geo_coordinates <- ee$Image$pixelLonLat()$clip(region_i)
-  ## get latitude
+  
+  ## Get latitude
   lat <- geo_coordinates$select('latitude')$add(5)$multiply(-1)$multiply(1000)$toInt16()
-  ## get longitude
+  
+  ## Get longitude
   lon_sin <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
     sin()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_sin')
-  ## cosine
+  
+  ## Cosine
   lon_cos <- geo_coordinates$select('longitude')$multiply(pi)$divide(180)$
     cos()$multiply(-1)$multiply(10000)$toInt16()$rename('longitude_cos')
   
-  ## get heigth above nearest drainage
+  ## Get heigth above nearest drainage
   hand <- ee$ImageCollection("users/gena/global-hand/hand-100")$mosaic()$toInt16()$
     clip(region_i)$rename('hand')
   
-  ## get digital elevation models
+  ## Get digital elevation models
   merit_dem <- ee$Image('MERIT/DEM/v1_0_3')$select('dem')$int16()$
     clip(region_i)$rename('merit_dem')
   
   ana_dem <- ee$Image('projects/et-brasil/assets/anadem/v1')$
     clip(region_i)$rename('ana_dem')
   
-  ## get slopes
+  ## Get slopes
   merit_slope <- ee$Terrain$slope(merit_dem)$rename('merit_slope')
   ana_slope <- ee$Terrain$slope(ana_dem)$rename('ana_slope')
   
-  ## Merit based. represents hidrological patterns and areas susceptible to erosion 
+  ## Merit based geomorpho data. Represents hidrological patterns and areas susceptible to erosion 
   dxx <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxx")$mosaic()$
     clip(region_i)$rename('dxx')
   
@@ -123,16 +127,16 @@ for(m in 1:length(missing)) {
   northness <- ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/northness")$mosaic()$
     clip(region_i)$rename('northness')
 
-  ## get the landsat mosaic for the current year 
+  ## Get the landsat mosaic for the current year 
   mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(year_i))$
     filterBounds(region_i)$
     mosaic()$select(bands)
   
-  ## compute spectral indexes (new: ndpi, ndbi, mndwi)
+  ## Compute spectral indexes (new: ndpi, ndbi, mndwi)
   ## metrics to be considered for indexes
   indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
   
-  ## function to retain bandnames for the indexes
+  ## Function to retain bandnames for the indexes
   getBands <- function(metrics, band) {
     return(
       grep(paste(metrics, collapse = "|"), 
@@ -140,7 +144,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## get bandnames
+  ## Get bandnames
   blue <- getBands(indexMetrics, 'blue')
   green <- getBands(indexMetrics, 'green(?!.*texture)')
   red <- getBands(indexMetrics, 'red(?!_edge)')
@@ -151,7 +155,7 @@ for(m in 1:length(missing)) {
   swir1 <- getBands(indexMetrics, 'swir1')
   swir2 <- getBands(indexMetrics, 'swir2')
   
-  ## normalized difference vegetation index 
+  ## Normalized difference vegetation index 
   getNDVI <- function(image) {
     x <- image$select(nir)$subtract(image$select(red))
     y <- image$select(nir)$add(image$select(red))
@@ -161,7 +165,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## normalized difference built-up index
+  ## Normalized difference built-up index
   getNDBI <- function(image) {
     x <- image$select(swir1)$subtract(image$select(nir))
     y <- image$select(swir1)$add(image$select(nir))
@@ -171,7 +175,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## normalized difference water index 
+  ## Normalized difference water index 
   getNDWI <- function(image) {
     x <- image$select(nir)$subtract(image$select(swir1))
     y <- image$select(nir)$add(image$select(swir1))
@@ -181,7 +185,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## modified normalized difference water index
+  ## Modified normalized difference water index
   getMNDWI <- function(image) {
     x <- image$select(green)$subtract(image$select(swir1))
     y <- image$select(green)$add(image$select(swir1))
@@ -191,7 +195,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## photochemical reflectance index 
+  ## Photochemical reflectance index 
   getPRI <- function(image) {
     x <- image$select(blue)$subtract(image$select(green))
     y <- image$select(blue)$add(image$select(green))
@@ -201,7 +205,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## cellulose absorption index 
+  ## Cellulose absorption index 
   getCAI <- function(image) {
     x <- image$select(swir2)$divide(image$select(swir1))
     return(
@@ -209,7 +213,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## green chlorofyll vegetation index 
+  ## Green chlorofyll vegetation index 
   getGCVI <- function(image) {
     x <- image$select(nir)$divide(image$select(green))
     y <- x$subtract(1)
@@ -218,7 +222,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## enhanced vegetation index 2
+  ## Enhanced vegetation index 2
   getEVI2 <- function(image) {
     x <- image$select(nir)$subtract(image$select(red))
     yi <- image$select(red)$multiply(2.4)
@@ -229,7 +233,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## soil adjusted vegetation index
+  ## Soil adjusted vegetation index
   getSAVI <- function(image) {
     x <- image$select(nir)$subtract(image$select(red))
     y <- image$select(nir)$add(image$select(red))$add(0.5)
@@ -239,7 +243,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## normalized difference phenology index 
+  ## Normalized difference phenology index 
   getNDPI <- function(image) {
     xi <- image$select(red)$multiply(0.74)
     xj <- image$select(swir1)$multiply(0.26)
@@ -252,9 +256,9 @@ for(m in 1:length(missing)) {
     )
   }
   
-  #### specific for sentinel-2
+  ## Specific indexes for Sentinel-2 data
   
-  ## normalized difference vegetation index with red edge band 
+  ## Normalized difference vegetation index with red edge band 
   getNDVIRED <- function(image) {
     x <- image$select(redge1)$subtract(image$select(red))
     y <- image$select(redge1)$add(image$select('red_median'))
@@ -264,7 +268,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## vegetation index 700nm
+  ## Vegetation index 700nm
   getVI700 <- function(image) {
     x <- image$select(redge1)$subtract(image$select(red))
     y <- image$select(redge1)$add(image$select(red))
@@ -274,7 +278,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## inverted red-edge chlorophyll index
+  ## Inverted red-edge chlorophyll index
   getIRECI <- function(image) {
     x <- image$select(redge3)$subtract(image$select(red))
     y <- image$select(redge1)$divide(image$select(redge2))
@@ -284,7 +288,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## chlorofyll index red edge
+  ## Chlorofyll index red edge
   getCIRE <- function(image) {
     x <- image$select(nir)$divide(image$select(redge1))$subtract(1)
     return(
@@ -292,7 +296,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## transformed chlorophyll absorption in reflectance index
+  ## Transformed chlorophyll absorption in reflectance index
   getTCARI <- function(image) {
     xi <- image$select(redge1)$subtract(image$select(red))
     xj <- image$select(redge1)$subtract(image$select(green))
@@ -305,7 +309,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## spectral feature depth vegetation index
+  ## Spectral feature depth vegetation index
   getSFDVI <- function(image) {
     x <- image$select(green)$add(image$select(nir))
     x <- x$divide(2)
@@ -317,7 +321,7 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## normalized difference red edge index
+  ## Normalized difference red edge index
   getNDRE <- function(image) {
     x <- image$select(nir)$subtract(image$select(redge1))
     y <- image$select(nir)$add(image$select(redge1))
@@ -368,10 +372,10 @@ for(m in 1:length(missing)) {
     )
   }
   
-  ## add index
+  ## Add index
   indexImage <- getIndexes(mosaic_i)
 
-  ## bind mapbiomas mosaic and auxiliary bands
+  ## Bind mapbiomas mosaic and auxiliary bands
   mosaic_i <- mosaic_i$addBands(lat)$
     addBands(lon_sin)$
     addBands(lon_cos)$
@@ -393,34 +397,32 @@ for(m in 1:length(missing)) {
     addBands(ee$Image(as.numeric(year_i))$int16()$rename('year'))$
     addBands(indexImage)
   
-  
-  ## subset sample points for the region 
+  ## Subset sample points for the region 
   samples_ij <- samples$filterBounds(regionsCollection$filterMetadata('mapb', "equals", region_list))
   
-  ## apply subset for problematic regions
-  ## add a random column to the FeatureCollection
+  ## Apply subset for problematic regions
+  ## Add a random column to the FeatureCollection
   # samples_ij <- samples_ij$randomColumn('randomValue')
   # ## filter to retain 70% of the features
   # samples_ij <- samples_ij$filter(ee$Filter$lt('randomValue', 0.7))
   
   print(paste0('number of points: ', samples_ij$size()$getInfo()))
   
-  ## get training samples
+  ## Get training samples
   training_i <- mosaic_i$sampleRegions(collection= samples_ij,
                                        scale= 10,
                                        geometries= TRUE,
                                        tileScale= 2)
   
-  ## remove NA or NULL from extracted data
+  ## Remove NA or NULL from extracted data
   training_i <- training_i$filter(ee$Filter$notNull(bands))
   
-  ## build task to export data
+  ## Build task to export data
   task <- ee$batch$Export$table$toAsset(
     training_i, paste0('train_col9_reg' , region_list , '_' , year_i , '_v' , version_out),
     paste0(dirout , 'train_col9_reg' , region_list , '_' , year_i , '_v' , version_out))
   
-  ## start task
+  ## Start task
   task$start()
   print ('========================================')
-  
 }
