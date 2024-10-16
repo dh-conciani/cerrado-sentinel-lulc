@@ -1,5 +1,5 @@
 // -- -- -- -- 01_trainingMask
-// generate training mask based in stable pixels from mapbiomas collection 8.0, reference maps and GEDI data
+// generate training mask based in stable pixels from mapbiomas collection 9.0, reference maps and GEDI data
 // dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
 // Set Cerrado extent in which result will be exported 
@@ -18,7 +18,7 @@ var dirout = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENT
 // Set string to identify the output version
 var version_out = '3';
 
-// Read mapbiomas lulc -- collection 8.0
+// Read mapbiomas lulc -- collection 9.0
 var collection = ee.Image('projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1');
 
 // Set function to reclassify collection by ipam-workflow classes 
