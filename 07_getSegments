@@ -20,7 +20,7 @@ var geometry = ee.Geometry.Polygon(
 var root = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL-GENERAL-POST/';
 var out = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL-GENERAL-POST/';
 
-// Metadata for output versioning
+// Metadata
 var outputVersion = '7'; 
 
 // Load the Sentinel image collection filtered for the Cerrado biome
