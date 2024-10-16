@@ -1,5 +1,5 @@
-## -- -- -- -- 05_rfClassification
-## Run smileRandomForest classifier - Mapbiomas Collection 9.0
+## -- -- -- -- 06_rfClassification
+## Run smileRandomForest classifier - MapBiomas 10m Collection 2.0
 ## dhemerson.costa@ipam.org.br and barbara.silva@ipam.org.br
 
 ## Read libraries
@@ -16,8 +16,8 @@ output_version <-  '10'   # output classification version
 
 ## Define class dictionary
 classDict <- list(
-  class=      c(3,    4, 11, 12, 15, 18, 25, 33),
-  proportion= c(0.65, 1, 0.5, 1,  1,  1,  1,  1), ## adjust training samples proportion
+  class =      c(3,    4, 11, 12, 15, 18, 25, 33),
+  proportion = c(0.65, 1, 0.5, 1,  1,  1,  1,  1), ## adjust training samples proportion
   name = c('Forest', 'Savanna', 'Wetland', 'Grassland', 'Pasture', 'Agriculture', 'Non-Vegetated', 'Water')
 )
 
@@ -112,7 +112,7 @@ for (i in 1:length(regions_list)) {
     updateMask(region_i_ras)$
     rename('hand')
   
-  ## get digital elevation models
+  ## Get digital elevation models
   merit_dem <- resampleImage(ee$Image('MERIT/DEM/v1_0_3')$select('dem')$int16()$
                                unmask(0)$
                                rename('merit_dem'))
@@ -123,11 +123,11 @@ for (i in 1:length(regions_list)) {
     unmask(0)$
     rename('ana_dem')
   
-  ## get slopes
+  ## Get slopes
   merit_slope <- ee$Terrain$slope(merit_dem)$rename('merit_slope')
   ana_slope <- ee$Terrain$slope(ana_dem)$rename('ana_slope')
   
-  ## Merit based. represents hidrological patterns and areas susceptible to erosion 
+  ## Merit geomorpho based. represents hidrological patterns and areas susceptible to erosion 
   dxx <- resampleImage(ee$ImageCollection("projects/sat-io/open-datasets/Geomorpho90m/dxx")$mosaic()$
                          unmask(0)$
                          rename('dxx'))
@@ -180,18 +180,18 @@ for (i in 1:length(regions_list)) {
   for (j in 1:length(years_ij)) {
     print(paste0('----> ', years_ij[j]))
     
-    ## get the sentinel  for the current year 
+    ## get the sentinel mosaic for the current year 
     mosaic_i <- mosaic$filterMetadata('year', 'equals', as.numeric(years_ij[j]))$
       filterBounds(region_i_vec)$
       mosaic()
     
-    ## get bands
+    ## Get bands
     bands <- mosaic_i$bandNames()$getInfo()
     
-    ## metrics to be considered for indexes
+    ## Metrics to be considered for indexes
     indexMetrics <- c('median', 'median_dry', 'median_wet', 'stdDev')
     
-    ## function to retain bandnames for the indexes
+    ## Function to retain bandnames for the indexes
     getBands <- function(metrics, band) {
       return(
         grep(paste(metrics, collapse = "|"), 
@@ -199,7 +199,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## get bandnames
+    ## Get bandnames
     blue <- getBands(indexMetrics, 'blue')
     green <- getBands(indexMetrics, 'green(?!.*texture)')
     red <- getBands(indexMetrics, 'red(?!_edge)')
@@ -210,7 +210,7 @@ for (i in 1:length(regions_list)) {
     swir1 <- getBands(indexMetrics, 'swir1')
     swir2 <- getBands(indexMetrics, 'swir2')
     
-    ## normalized difference vegetation index 
+    ## Normalized difference vegetation index 
     getNDVI <- function(image) {
       x <- image$select(nir)$subtract(image$select(red))
       y <- image$select(nir)$add(image$select(red))
@@ -220,7 +220,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## normalized difference built-up index
+    ## Normalized difference built-up index
     getNDBI <- function(image) {
       x <- image$select(swir1)$subtract(image$select(nir))
       y <- image$select(swir1)$add(image$select(nir))
@@ -230,7 +230,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## normalized difference water index 
+    ## Normalized difference water index 
     getNDWI <- function(image) {
       x <- image$select(nir)$subtract(image$select(swir1))
       y <- image$select(nir)$add(image$select(swir1))
@@ -240,7 +240,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## modified normalized difference water index
+    ## Modified normalized difference water index
     getMNDWI <- function(image) {
       x <- image$select(green)$subtract(image$select(swir1))
       y <- image$select(green)$add(image$select(swir1))
@@ -250,7 +250,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## photochemical reflectance index 
+    ## Photochemical reflectance index 
     getPRI <- function(image) {
       x <- image$select(blue)$subtract(image$select(green))
       y <- image$select(blue)$add(image$select(green))
@@ -260,7 +260,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## cellulose absorption index 
+    ## Cellulose absorption index 
     getCAI <- function(image) {
       x <- image$select(swir2)$divide(image$select(swir1))
       return(
@@ -268,7 +268,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## green chlorofyll vegetation index 
+    ## Green chlorofyll vegetation index 
     getGCVI <- function(image) {
       x <- image$select(nir)$divide(image$select(green))
       y <- x$subtract(1)
@@ -277,7 +277,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## enhanced vegetation index 2
+    ## Enhanced vegetation index 2
     getEVI2 <- function(image) {
       x <- image$select(nir)$subtract(image$select(red))
       yi <- image$select(red)$multiply(2.4)
@@ -288,7 +288,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## soil adjusted vegetation index
+    ## Soil adjusted vegetation index
     getSAVI <- function(image) {
       x <- image$select(nir)$subtract(image$select(red))
       y <- image$select(nir)$add(image$select(red))$add(0.5)
@@ -298,7 +298,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## normalized difference phenology index 
+    ## Normalized difference phenology index 
     getNDPI <- function(image) {
       xi <- image$select(red)$multiply(0.74)
       xj <- image$select(swir1)$multiply(0.26)
@@ -313,7 +313,7 @@ for (i in 1:length(regions_list)) {
     
     #### specific for sentinel-2
     
-    ## normalized difference vegetation index with red edge band 
+    ## Normalized difference vegetation index with red edge band 
     getNDVIRED <- function(image) {
       x <- image$select(redge1)$subtract(image$select(red))
       y <- image$select(redge1)$add(image$select('red_median'))
@@ -323,7 +323,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## vegetation index 700nm
+    ## Vegetation index 700nm
     getVI700 <- function(image) {
       x <- image$select(redge1)$subtract(image$select(red))
       y <- image$select(redge1)$add(image$select(red))
@@ -333,7 +333,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## inverted red-edge chlorophyll index
+    ## Inverted red-edge chlorophyll index
     getIRECI <- function(image) {
       x <- image$select(redge3)$subtract(image$select(red))
       y <- image$select(redge1)$divide(image$select(redge2))
@@ -343,7 +343,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## chlorofyll index red edge
+    ## Chlorofyll index red edge
     getCIRE <- function(image) {
       x <- image$select(nir)$divide(image$select(redge1))$subtract(1)
       return(
@@ -351,7 +351,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## transformed chlorophyll absorption in reflectance index
+    ## Transformed chlorophyll absorption in reflectance index
     getTCARI <- function(image) {
       xi <- image$select(redge1)$subtract(image$select(red))
       xj <- image$select(redge1)$subtract(image$select(green))
@@ -364,7 +364,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## spectral feature depth vegetation index
+    ## Spectral feature depth vegetation index
     getSFDVI <- function(image) {
       x <- image$select(green)$add(image$select(nir))
       x <- x$divide(2)
@@ -376,7 +376,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## normalized difference red edge index
+    ## Normalized difference red edge index
     getNDRE <- function(image) {
       x <- image$select(nir)$subtract(image$select(redge1))
       y <- image$select(nir)$add(image$select(redge1))
@@ -427,10 +427,10 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## add index
+    ## Add index
     indexImage <- getIndexes(mosaic_i)
     
-    ## bind mapbiomas mosaic and auxiliary bands
+    ## Bind mapbiomas mosaic and auxiliary bands
     mosaic_i <- mosaic_i$addBands(lat)$
       addBands(lon_sin)$
       addBands(lon_cos)$
@@ -452,10 +452,10 @@ for (i in 1:length(regions_list)) {
       addBands(ee$Image(as.numeric(years_ij[j]))$int16()$rename('year'))$
       addBands(indexImage)
     
-    ## read samples
+    ## Read samples
     samples <- ee$FeatureCollection(paste0(training_dir, 'v', samples_version, '/train_col9_reg', regions_list[i], '_', years_ij[j], '_v', samples_version))
     
-    ## limit water to 175 samples (avoid over-estimation)
+    ## Limit water to 175 samples (avoid over-estimation)
     filterWater <- function(feature) {
       return(
         feature$
@@ -465,7 +465,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## define function to filter classes based in proportion rules
+    ## Define function to filter classes based in proportion rules
     filterProportion <- function(feature, class, proportion) {
       return(
         feature$filterMetadata('reference', 'equals', class)$randomColumn('random')$
@@ -473,7 +473,7 @@ for (i in 1:length(regions_list)) {
       )
     }
     
-    ## apply filtering rules
+    ## Apply filtering rules
     training_ij <- ee$FeatureCollection(list())
     for(k in 1:length(classDict$class)) {
       if(classDict$class[k] == 33) {
