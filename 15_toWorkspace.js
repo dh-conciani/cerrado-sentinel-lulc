@@ -4,7 +4,7 @@
 
 // Input asset
 var assetInput = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL-GENERAL-POST/';
-var fileName = 'CERRADO_S2-C1_gapfill_v10_seg_v10_frequency_v6_temporal_v18_FalseRegrowth_v6_geomorpho_v4_spatial_v5';
+var fileName = 'CERRADO_S2-C1_gapfill_v10_seg_v10_frequency_v6_temporal_v18_FalseRegrowth_v6_geomorpho_v4_spatial_v6';
 
 // Classification input
 var collection = ee.Image(assetInput + fileName);
