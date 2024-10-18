@@ -26,7 +26,7 @@ var classificationInput = ee.Image(root + inputFile);
 print('Input classification', classificationInput);
 Map.addLayer(classificationInput, vis, 'Input classification');
 
-// Load the another classification
+// Load another classification
 var version_2 = ee.Image("projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL-GENERAL-POST/CERRADO_S2-C1_gapfill_v2_segmentation_v0_frequency_v0_temporal_v0");
 
 // Define the old and new values for reclassification
