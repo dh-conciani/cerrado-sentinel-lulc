@@ -1,10 +1,10 @@
-// -- -- -- -- 15_toWorkspace
+// -- -- -- -- 13_toWorkspace
 // Export cerrado classification as a multiband image for the integration step
 // barbara.silva@ipam.org.br and dhemerson.costa@ipam.org.br
 
 // Input asset
 var assetInput = 'projects/mapbiomas-workspace/COLECAO_DEV/COLECAO9_DEV/CERRADO/SENTINEL-GENERAL-POST/';
-var fileName = 'CERRADO_S2-C1_gapfill_v10_seg_v10_frequency_v6_temporal_v18_FalseRegrowth_v6_geomorpho_v4_spatial_v6';
+var fileName = 'CERRADO_col2_native6_rocky2';
 
 // Classification input
 var collection = ee.Image(assetInput + fileName);
@@ -17,7 +17,7 @@ Map.addLayer(collection, {}, 'Input data');
 var assetOutput = 'projects/mapbiomas-workspace/COLECAO9-S2/classificacao';
 
 // Output version
-var outputVersion = '5';
+var outputVersion = '7';
 
 // Set the MapBiomas collection launch ID
 var collectionId = 2.0;
@@ -49,6 +49,7 @@ var geometry = ee.Geometry.Polygon(
     ], null, false
 );
 
+
 // Loop through each year
 years.forEach(function(year) {
     var imageYear = collection.select('classification_' + year);
@@ -77,6 +78,23 @@ years.forEach(function(year) {
     if (theme.type === 'biome') {
         name = theme.name + '-' + name;
     }
+    
+    // Reclassify the mosaic of uses in Alto Paraguai watershed (BAP) with the Pantanal biome
+    var assetPantanal = ee.Image('projects/mapbiomas-workspace/COLECAO9-S2/classificacao-pant/pant_s2_final_v1');
+    var pantanalYear = assetPantanal.select('classification_' + year);
+    var bapBoundaries = ee.Image(1).clip(ee.FeatureCollection('projects/barbaracosta-ipam/assets/collection-9/BAP_limit'));
+
+    imageYear = imageYear.where(imageYear.eq(21)
+        .and(pantanalYear.eq(3))
+        .and(bapBoundaries.eq(1)), 4);
+    
+    imageYear = imageYear.where(imageYear.eq(21)
+      .and(pantanalYear.eq(4))
+      .and(bapBoundaries.eq(1)), 4);
+
+    imageYear = imageYear.where(imageYear.eq(21)
+        .and(pantanalYear.eq(12))
+        .and(bapBoundaries.eq(1)), 12);
 
     // Add the processed image to the map
     Map.addLayer(imageYear, vis, theme.name + ' ' + year, false);
