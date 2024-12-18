@@ -1,4 +1,4 @@
-// -- -- -- -- 13_toWorkspace
+// -- -- -- -- 15_toWorkspace
 // Export cerrado classification as a multiband image for the integration step
 // barbara.silva@ipam.org.br and dhemerson.costa@ipam.org.br
 
